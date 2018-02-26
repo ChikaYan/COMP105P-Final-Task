@@ -29,11 +29,11 @@ void turn(float a) {
     drive_goto(round(a * 0.284), round(a * (-0.284)));
 }
 
-void turn_left(){
+void turn_right(){
     drive_goto(26, -25);
 }
 
-void turn_right(){
+void turn_left(){
     drive_goto(-26, 25);
 }
 
