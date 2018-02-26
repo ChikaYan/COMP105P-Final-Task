@@ -8,10 +8,12 @@
 #include "ping.h"
 #include "basics.h"
 
+int counter = 0;
+
 const int SQUARE_LENGTH = 120;
 const int LR_THRESHOLD = 30;
 const int FRONT_THRESHOLD = 18;
-int counter = 0;
+
 
 void right_turn_counter(){
     turn_right();
