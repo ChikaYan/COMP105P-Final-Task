@@ -32,3 +32,13 @@ int main() {
 int main() {
 
 }
+
+
+// Pledge algorithm
+// 1) reach obstacle in front, start pledge algorithm
+// 2) turn right
+// 3) for every movement below:
+//    (a) Obstacle: LEFT, No Obstacle: FRONT -----> move forward
+//    (b) Obstacle: LEFT + FRONT -----------------> turn right
+// 4) keep looping until counter reach 0
+// 5) end Pledge algorithm
