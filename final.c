@@ -25,8 +25,8 @@ struct node {
 
 int counter = 0;
 enum dir direction = up; // direction can be 'u' 'd' 'l' 'r'
-struct node current_node;
-struct node nodes[4][5];
+struct node *current_node;
+struct node *nodes[4][5];
 const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
@@ -82,6 +82,18 @@ void move_forward() {
 
 }
 
+void initialise_node() {
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 5; y++) {
+            nodes[x][y]->x = x;
+            nodes[x][y]->y = y;
+            nodes[x][y]->counter = 0;
+            for (int i = 0; i < 20; i++) {
+                nodes[x][y]->connected[i] = nullptr;
+            }
+        }
+    }
+}
 
 int main() { // Trémaux's Algorithm
     drive_goto(30, 30); // initialize to first middle point
@@ -93,17 +105,7 @@ int main() { // Trémaux's Algorithm
     }
 }
 
-void initialise_node() {
-    for (int x = 0; x < 4; x++){
-        for (int y = 0; y < 5; y++){
-            nodes[x][y].x = x;
-            nodes[x][y].y = y;
-            for (int i = 0; i < 20; i++){
-                nodes[x][y].connected[i] = nullptr;
-            }
-        }
-    }
-}
+
 
 //int main() { // Pledge Algorithm
 //    drive_goto(30, 30); // initialize to first middle point
