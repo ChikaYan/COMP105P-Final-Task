@@ -8,9 +8,18 @@
 #include "ping.h"
 #include "basics.h"
 
-int counter = 0;
 
-const int SQUARE_LENGTH = 122; // in ticks
+struct node {
+    int x;
+    int y;
+    struct node *connected[20];
+    int counter;
+};
+
+
+int counter = 0;
+struct node current_node;
+const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
 
@@ -57,42 +66,52 @@ void move_forward() {
 }
 
 
-int main() {
+int main() { // Trémaux's Algorithm
     drive_goto(30, 30); // initialize to first middle point
-    while (1) {
-        if (counter < 0) {
-            if (right_clear()) {
-                turn_right_counter();
-                move_forward();
-                continue;
-            }
-            if (front_clear()) {
-                move_forward();
-                continue;
-            }
-            turn_left_counter();
-
-        } else if (counter > 0) {
-            if (left_clear()) {
-                turn_left_counter();
-                move_forward();
-                continue;
-            }
-            if (front_clear()) {
-                move_forward();
-                continue;
-            }
-            turn_right_counter();
-
-        } else {
-            if (front_clear()) {
-                move_forward();
-            } else {
-                turn_right_counter();
-            }
-        }
+    current_node.x = 1;
+    current_node.y = 1;
+    current_node.counter = 0;
+    for (int i = 0; i < 20; i++) {
+        current_node.connected[i] = nullptr;
     }
 }
+
+//int main() { // Pledge Algorithm
+//    drive_goto(30, 30); // initialize to first middle point
+//    while (1) {
+//        if (counter < 0) {
+//            if (right_clear()) {
+//                turn_right_counter();
+//                move_forward();
+//                continue;
+//            }
+//            if (front_clear()) {
+//                move_forward();
+//                continue;
+//            }
+//            turn_left_counter();
+//
+//        } else if (counter > 0) {
+//            if (left_clear()) {
+//                turn_left_counter();
+//                move_forward();
+//                continue;
+//            }
+//            if (front_clear()) {
+//                move_forward();
+//                continue;
+//            }
+//            turn_right_counter();
+//
+//        } else {
+//            if (front_clear()) {
+//                move_forward();
+//            } else {
+//                turn_right_counter();
+//            }
+//        }
+//    }
+//}
 
 
 // Pledge algorithm
