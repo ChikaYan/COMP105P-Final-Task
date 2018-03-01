@@ -10,40 +10,46 @@
 
 int counter = 0;
 
-const int SQUARE_LENGTH = 120;
-const int LR_THRESHOLD = 30;
-const int FRONT_THRESHOLD = 18;
+const int SQUARE_LENGTH = 122; // in ticks
+const int LR_THRESHOLD = 45; // in LRdis()
+const int FRONT_THRESHOLD = 25; // in cm
 
 
-void right_turn_counter() {
+int front_clear() {
+    int front_dis = ping_cm(8);
+    printf("Front distance is: %d\n", front_dis);
+    if (front_dis >= FRONT_THRESHOLD) {
+        return 1;
+    }
+    return 0;
+}
+
+int left_clear() {
+    float left_dis = leftDis();
+    printf("Left distance is: %f\n", left_dis);
+    if (left_dis >= LR_THRESHOLD) {
+        return 1;
+    }
+    return 0;
+}
+
+int right_clear() {
+    float right_dis = rightDis();
+    printf("Right distance is: %f\n", right_dis);
+    if (right_dis >= LR_THRESHOLD) {
+        return 1;
+    }
+    return 0;
+}
+
+void turn_right_counter() {
     turn_right();
     counter++;
 }
 
-void left_turn_counter() {
+void turn_left_counter() {
     turn_left();
     counter--;
-}
-
-int front_has_obstacle() {
-    if (ping_cm(8) >= FRONT_THRESHOLD) {
-        return 0;
-    }
-    return 1;
-}
-
-int left_has_obstacle() {
-    if (leftDis() >= LR_THRESHOLD) {
-        return 0;
-    }
-    return 1;
-}
-
-int right_has_obstacle() {
-    if (rightDis() >= LR_THRESHOLD) {
-        return 0;
-    }
-    return 1;
 }
 
 void move_forward() {
@@ -55,34 +61,36 @@ int main() {
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (counter < 0) {
-            if (right_has_obstacle()) {
-                if (front_has_obstacle()) {
-                    left_turn_counter();
-                } else {
-                    move_forward();
-                }
-            } else {
-                right_turn_counter();
+            if (right_clear()) {
+                turn_right_counter();
+                move_forward();
+                continue;
             }
+            if (front_clear()) {
+                move_forward();
+                continue;
+            }
+            turn_left_counter();
+
         } else if (counter > 0) {
-            if (left_has_obstacle()) {
-                if (front_has_obstacle()) {
-                    right_turn_counter();
-                } else {
-                    move_forward();
-                }
-            } else {
-                left_turn_counter();
+            if (left_clear()) {
+                turn_left_counter();
+                move_forward();
+                continue;
             }
+            if (front_clear()) {
+                move_forward();
+                continue;
+            }
+            turn_right_counter();
+
         } else {
-            if (front_has_obstacle() == 0) {
+            if (front_clear()) {
                 move_forward();
             } else {
-                right_turn_counter();
+                turn_right_counter();
             }
         }
-
-
     }
 }
 

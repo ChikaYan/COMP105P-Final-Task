@@ -37,6 +37,8 @@ void turn_left(){
     drive_goto(-26, 25);
 }
 
+
+
 float leftDis() {
     int init1 = 0, init2 = 0;
     for (int dacVal = 0; dacVal < 160; dacVal += 4) {
@@ -66,5 +68,6 @@ float rightDis() {
     }
     return (init1 + init2) / 2.0;
 }
+
 
 #endif //PROJECT_BASICMOVE_H
