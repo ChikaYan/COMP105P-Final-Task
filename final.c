@@ -24,7 +24,7 @@ struct node {
 
 
 int counter = 0;
-enum dir direction = up; // direction can be 'u' 'd' 'l' 'r'
+enum dir direction = up; // direction can be 'up' 'down' 'left' 'right'
 struct node *current_node;
 struct node *nodes[4][5];
 const int SQUARE_LENGTH = 124; // in ticks
@@ -96,7 +96,7 @@ void initialise_node() {
 }
 
 int main() { // Trémaux's Algorithm
-    drive_goto(30, 30); // initialize to first middle point
+    initialise_node(); // initialize to first middle point
     current_node.x = 1;
     current_node.y = 1;
     current_node.counter = 0;
@@ -105,7 +105,9 @@ int main() { // Trémaux's Algorithm
     }
 }
 
-
+void initialize_position() {
+    drive_goto(30, 30);
+}
 
 //int main() { // Pledge Algorithm
 //    drive_goto(30, 30); // initialize to first middle point
@@ -144,6 +146,12 @@ int main() { // Trémaux's Algorithm
 //    }
 //}
 
+void dead_end(){
+    if (front_clear() == 0 && left_clear() == 0 && right_clear() == 0){
+        turn_around();
+
+    }
+}
 
 // Pledge algorithm
 // 1) reach obstacle in front, start pledge algorithm
@@ -160,7 +168,7 @@ int main() { // Trémaux's Algorithm
 //      b) new_passage = N
 //      c) march to new_passage
 //
-// 2) Enter old junction (current_pos == X, previous_junction != current_pos)
+// 2) Enter old junction (current_pos == X, previous_junction_pos != current_pos)
 //      a) current_passage = N
 //      b) turn around and march back
 //

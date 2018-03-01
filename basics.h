@@ -37,7 +37,9 @@ void turn_left(){
     drive_goto(-26, 25);
 }
 
-
+void turn_around(){
+    drive_goto(-51, 51);
+}
 
 float leftDis() {
     int init1 = 0, init2 = 0;
