@@ -191,6 +191,9 @@ int main() { // Trémaux's Algorithm
 // 3) Dead_end (sensor)
 //      a) turn around and march back
 //
-// 4) Return old junction (current_pos == X, previous_junction == current_pos)
+// 4) Return old junction + unlabeled passage (current_pos == X, previous_junction == current_pos)
 //      a) new_passage_2 = N
-//      b)
+//      b) march to new_passage_2
+//
+//  5) Return old junction + no unlabeled passage (current_pos == X, previous_juntion == current_pos)
+//      a) return to X
