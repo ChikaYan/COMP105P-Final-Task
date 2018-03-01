@@ -8,6 +8,12 @@
 #include "ping.h"
 #include "basics.h"
 
+enum dir {
+    up,
+    down,
+    left,
+    right
+};
 
 struct node {
     int x;
@@ -18,6 +24,7 @@ struct node {
 
 
 int counter = 0;
+enum dir direction = up; // direction can be 'u' 'd' 'l' 'r'
 struct node current_node;
 const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
@@ -63,6 +70,16 @@ void turn_left_counter() {
 
 void move_forward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
+    if (direction == up) {
+        current_node = nodes[current_node.x, current_node.y + 1];
+    } else if (direction == down) {
+        current_node = nodes[current_node.x, current_node.y - 1];
+    } else if (direction == left) {
+        current_node = nodes[current_node.x - 1, current_node.y];
+    } else {
+        current_node = nodes[current_node.x + 1, current_node.y];
+    }
+
 }
 
 
