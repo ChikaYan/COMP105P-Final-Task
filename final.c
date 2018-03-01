@@ -15,9 +15,17 @@ enum dir {
     right
 };
 
+enum label {
+    N,
+    X,
+    OldJunction,
+    Empty,
+};
+
 struct node {
     int x;
     int y;
+    enum label tag;
     struct node *connected[20];
     int counter;
 };
@@ -106,8 +114,16 @@ void move_forward() {
         case left:
             current_node = nodes[current_node.x - 1, current_node.y];
     }
-
 }
+
+int ifJunction() {
+    if (front_clear() + left_clear() + right_clear() >= 2) {
+        return 1;
+    }
+    return 0;
+}
+
+
 
 void initialise_node() {
     for (int x = 0; x < 4; x++) {
@@ -115,6 +131,7 @@ void initialise_node() {
             nodes[x][y] = malloc(sizeof(struct node));
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
+            nodes[x][y]->tag = Empty;
             nodes[x][y]->counter = 0;
             for (int i = 0; i < 20; i++) {
                 nodes[x][y]->connected[i] = malloc(sizeof(struct node));
@@ -126,7 +143,6 @@ void initialise_node() {
 
 int main() { // Trémaux's Algorithm
     drive_goto(30, 30); // initialize to first middle point
-
 }
 
 
