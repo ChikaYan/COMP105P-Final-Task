@@ -23,9 +23,8 @@ struct node {
 };
 
 
-int counter = 0;
-enum dir direction = up; // direction can be 'u' 'd' 'l' 'r'
-struct node *current_node;
+enum dir direction = up;
+struct node *current_node = malloc(sizeof(struct node));
 struct node *nodes[4][5];
 const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
@@ -60,24 +59,52 @@ int right_clear() {
 
 void turn_right_counter() {
     turn_right();
-    counter++;
+    switch (direction) {
+        case up:
+            direction = right;
+            break;
+        case right:
+            direction = down;
+            break;
+        case down:
+            direction = left;
+            break;
+        case left:
+            direction = up;
+    }
 }
 
 void turn_left_counter() {
     turn_left();
-    counter--;
+    switch (direction) {
+        case up:
+            direction = left;
+            break;
+        case right:
+            direction = up;
+            break;
+        case down:
+            direction = right;
+            break;
+        case left:
+            direction = down;
+    }
 }
 
 void move_forward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
-    if (direction == up) {
-        current_node = nodes[current_node.x, current_node.y + 1];
-    } else if (direction == down) {
-        current_node = nodes[current_node.x, current_node.y - 1];
-    } else if (direction == left) {
-        current_node = nodes[current_node.x - 1, current_node.y];
-    } else {
-        current_node = nodes[current_node.x + 1, current_node.y];
+    switch (direction) {
+        case up:
+            current_node = nodes[current_node.x, current_node.y + 1];
+            break;
+        case right:
+            current_node = nodes[current_node.x + 1, current_node.y];
+            break;
+        case down:
+            current_node = nodes[current_node.x, current_node.y - 1];
+            break;
+        case left:
+            current_node = nodes[current_node.x - 1, current_node.y];
     }
 
 }
@@ -85,11 +112,13 @@ void move_forward() {
 void initialise_node() {
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 5; y++) {
+            nodes[x][y] = malloc(sizeof(struct node));
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
             nodes[x][y]->counter = 0;
             for (int i = 0; i < 20; i++) {
-                nodes[x][y]->connected[i] = nullptr;
+                nodes[x][y]->connected[i] = malloc(sizeof(struct node));
+                nodes[x][y]->connected[i] = NULL;
             }
         }
     }
@@ -97,12 +126,7 @@ void initialise_node() {
 
 int main() { // Trémaux's Algorithm
     drive_goto(30, 30); // initialize to first middle point
-    current_node.x = 1;
-    current_node.y = 1;
-    current_node.counter = 0;
-    for (int i = 0; i < 20; i++) {
-        current_node.connected[i] = nullptr;
-    }
+
 }
 
 
