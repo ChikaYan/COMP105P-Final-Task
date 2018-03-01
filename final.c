@@ -19,10 +19,10 @@ struct node {
 
 int counter = 0;
 struct node current_node;
+struct node nodes[4][5];
 const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
-
 
 int front_clear() {
     int front_dis = ping_cm(8);
@@ -76,6 +76,18 @@ int main() { // Trémaux's Algorithm
     }
 }
 
+void initialise_node() {
+    for (int x = 0; x < 4; x++){
+        for (int y = 0; y < 5; y++){
+            nodes[x][y].x = x;
+            nodes[x][y].y = y;
+            for (int i = 0; i < 20; i++){
+                nodes[x][y].connected[i] = nullptr;
+            }
+        }
+    }
+}
+
 //int main() { // Pledge Algorithm
 //    drive_goto(30, 30); // initialize to first middle point
 //    while (1) {
@@ -122,3 +134,20 @@ int main() { // Trémaux's Algorithm
 //    (b) Obstacle: LEFT + FRONT -----------------> turn right
 // 4) keep looping until counter reach 0
 // 5) end Pledge algorithm
+
+// Tremaux's Algorithm
+// 1) Enter new junction: (current_pos != X)
+//      a) current_pos = X
+//      b) new_passage = N
+//      c) march to new_passage
+//
+// 2) Enter old junction (current_pos == X, previous_junction != current_pos)
+//      a) current_passage = N
+//      b) turn around and march back
+//
+// 3) Dead_end (sensor)
+//      a) turn around and march back
+//
+// 4) Return old junction (current_pos == X, previous_junction == current_pos)
+//      a) new_passage_2 = N
+//      b)
