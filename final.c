@@ -8,6 +8,10 @@
 #include "ping.h"
 #include "basics.h"
 
+const int SQUARE_LENGTH = 124; // in ticks
+const int LR_THRESHOLD = 45; // in LRdis()
+const int FRONT_THRESHOLD = 25; // in cm
+
 enum dir {
     up,
     down,
@@ -32,11 +36,8 @@ struct node {
 
 
 enum dir direction = up;
-struct node *currentNode = malloc(sizeof(struct node));
+struct node *currentNode = NULL;
 struct node *nodes[4][5];
-const int SQUARE_LENGTH = 124; // in ticks
-const int LR_THRESHOLD = 45; // in LRdis()
-const int FRONT_THRESHOLD = 25; // in cm
 
 int frontClear() {
     int fd = ping_cm(8);
@@ -103,26 +104,37 @@ void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
     switch (direction) {
         case up:
-            current_node = nodes[current_node.x, current_node.y + 1];
+            currentNode = nodes[currentNode->x, currentNode->y + 1];
             break;
         case right:
-            current_node = nodes[current_node.x + 1, current_node.y];
+            currentNode = nodes[currentNode->x + 1, currentNode->y];
             break;
         case down:
-            current_node = nodes[current_node.x, current_node.y - 1];
+            currentNode = nodes[currentNode->x, currentNode->y - 1];
             break;
         case left:
-            current_node = nodes[current_node.x - 1, current_node.y];
+            currentNode = nodes[currentNode->x - 1, currentNode->y];
     }
 }
 
-int ifJunction() {
+int atJunction() {
     if (frontClear() + leftClear() + rightClear() >= 2) {
         return 1;
     }
     return 0;
 }
 
+void moveAlongPath() {
+    if (frontClear()) {
+        moveForward();
+    } else if (leftClear()) {
+        turnLeft();
+        moveForward();
+    } else {
+        turnRight();
+        moveForward();
+    }
+}
 
 void initialiseNode() {
     for (int x = 0; x < 4; x++) {
@@ -140,10 +152,54 @@ void initialiseNode() {
     }
 }
 
-int main() { // Trémaux's Algorithm
-    drive_goto(30, 30); // initialize to first middle point
+void addEdge(struct node *n1, struct node *n2) {
+    n1->connected[n1->counter] = n2;
+    n1->counter++;
+    n2->connected[n2->counter] = n1;
+    n2->counter++;
 }
 
+int main() { // Trémaux's Algorithm
+    currentNode = malloc(sizeof(struct node));
+    initialiseNode();
+    currentNode = nodes[0, 0];
+    drive_goto(30, 30); // initialize to first middle point
+    while (1) {
+        if (!atJunction()) {
+            struct node *preNode = malloc(sizeof(struct node));
+            preNode = currentNode;
+            moveAlongPath();
+            preNode->connected[preNode->counter] = currentNode;
+            preNode->counter++;
+//            currentNode->connected[currentNode->counter] = preNode;
+//            currentNode->counter++;
+            printf("preNode counter: %d\ncurrentNode counter: %d\n", preNode->counter, currentNode->counter);
+            break;
+        }
+
+
+    }
+
+}
+// Tremaux's Algorithm
+// 1) Enter new junction: (current_pos != X)
+//      a) current_pos = X
+//      b) new_passage = N
+//      c) march to new_passage
+//
+// 2) Enter old junction (current_pos == X, previous_junction != current_pos)
+//      a) current_passage = N
+//      b) turn around and march back
+//
+// 3) Dead_end (sensor)
+//      a) turn around and march back
+//
+// 4) Return old junction + unlabeled passage (current_pos == X, previous_junction == current_pos)
+//      a) new_passage_2 = N
+//      b) march to new_passage_2
+//
+//  5) Return old junction + no unlabeled passage (current_pos == X, previous_juntion == current_pos)
+//      a) return to X
 
 
 //int main() { // Pledge Algorithm
@@ -193,22 +249,3 @@ int main() { // Trémaux's Algorithm
 // 4) keep looping until counter reach 0
 // 5) end Pledge algorithm
 
-// Tremaux's Algorithm
-// 1) Enter new junction: (current_pos != X)
-//      a) current_pos = X
-//      b) new_passage = N
-//      c) march to new_passage
-//
-// 2) Enter old junction (current_pos == X, previous_junction != current_pos)
-//      a) current_passage = N
-//      b) turn around and march back
-//
-// 3) Dead_end (sensor)
-//      a) turn around and march back
-//
-// 4) Return old junction + unlabeled passage (current_pos == X, previous_junction == current_pos)
-//      a) new_passage_2 = N
-//      b) march to new_passage_2
-//
-//  5) Return old junction + no unlabeled passage (current_pos == X, previous_juntion == current_pos)
-//      a) return to X
