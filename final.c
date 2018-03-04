@@ -32,31 +32,31 @@ struct node {
 
 
 enum dir direction = up;
-struct node *current_node = malloc(sizeof(struct node));
+struct node *currentNode = malloc(sizeof(struct node));
 struct node *nodes[4][5];
 const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 45; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
 
-int front_clear() {
-    int front_dis = ping_cm(8);
-    printf("Front distance is: %d\n", front_dis);
-    if (front_dis >= FRONT_THRESHOLD) {
+int frontClear() {
+    int fd = ping_cm(8);
+    printf("Front distance is: %d\n", fd);
+    if (fd >= FRONT_THRESHOLD) {
         return 1;
     }
     return 0;
 }
 
-int left_clear() {
-    float left_dis = leftDis();
-    printf("Left distance is: %f\n", left_dis);
-    if (left_dis >= LR_THRESHOLD) {
+int leftClear() {
+    float ld = leftDis();
+    printf("Left distance is: %f\n", ld);
+    if (ld >= LR_THRESHOLD) {
         return 1;
     }
     return 0;
 }
 
-int right_clear() {
+int rightClear() {
     float right_dis = rightDis();
     printf("Right distance is: %f\n", right_dis);
     if (right_dis >= LR_THRESHOLD) {
@@ -65,8 +65,8 @@ int right_clear() {
     return 0;
 }
 
-void turn_right_counter() {
-    turn_right();
+void turnRight() {
+    drive_goto(26, -25);
     switch (direction) {
         case up:
             direction = right;
@@ -82,8 +82,8 @@ void turn_right_counter() {
     }
 }
 
-void turn_left_counter() {
-    turn_left();
+void turnLeft() {
+    drive_goto(-26, 25);
     switch (direction) {
         case up:
             direction = left;
@@ -99,7 +99,7 @@ void turn_left_counter() {
     }
 }
 
-void move_forward() {
+void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
     switch (direction) {
         case up:
@@ -117,15 +117,14 @@ void move_forward() {
 }
 
 int ifJunction() {
-    if (front_clear() + left_clear() + right_clear() >= 2) {
+    if (frontClear() + leftClear() + rightClear() >= 2) {
         return 1;
     }
     return 0;
 }
 
 
-
-void initialise_node() {
+void initialiseNode() {
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 5; y++) {
             nodes[x][y] = malloc(sizeof(struct node));
@@ -151,34 +150,34 @@ int main() { // Trémaux's Algorithm
 //    drive_goto(30, 30); // initialize to first middle point
 //    while (1) {
 //        if (counter < 0) {
-//            if (right_clear()) {
-//                turn_right_counter();
-//                move_forward();
+//            if (rightClear()) {
+//                turnRight();
+//                moveForward();
 //                continue;
 //            }
-//            if (front_clear()) {
-//                move_forward();
+//            if (frontClear()) {
+//                moveForward();
 //                continue;
 //            }
-//            turn_left_counter();
+//            turnLeft();
 //
 //        } else if (counter > 0) {
-//            if (left_clear()) {
-//                turn_left_counter();
-//                move_forward();
+//            if (leftClear()) {
+//                turnLeft();
+//                moveForward();
 //                continue;
 //            }
-//            if (front_clear()) {
-//                move_forward();
+//            if (frontClear()) {
+//                moveForward();
 //                continue;
 //            }
-//            turn_right_counter();
+//            turnRight();
 //
 //        } else {
-//            if (front_clear()) {
-//                move_forward();
+//            if (frontClear()) {
+//                moveForward();
 //            } else {
-//                turn_right_counter();
+//                turnRight();
 //            }
 //        }
 //    }
