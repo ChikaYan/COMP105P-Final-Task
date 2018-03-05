@@ -9,7 +9,7 @@
 #include "basics.h"
 
 const int SQUARE_LENGTH = 124; // in ticks
-const int LR_THRESHOLD = 45; // in LRdis()
+const int LR_THRESHOLD = 30; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
 
 enum dir {
@@ -103,16 +103,16 @@ void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
     switch (direction) {
         case up:
-            currentNode = *nodes[currentNode->x, currentNode->y + 1];
+            currentNode = nodes[currentNode->x][currentNode->y + 1];
             break;
         case right:
-            currentNode = *nodes[currentNode->x + 1, currentNode->y];
+            currentNode = nodes[currentNode->x + 1][currentNode->y];
             break;
         case down:
-            currentNode = *nodes[currentNode->x, currentNode->y - 1];
+            currentNode = nodes[currentNode->x][currentNode->y - 1];
             break;
         case left:
-            currentNode = *nodes[currentNode->x - 1, currentNode->y];
+            currentNode = nodes[currentNode->x - 1][currentNode->y];
     }
 }
 
@@ -190,23 +190,22 @@ void printMatrix() {
 }
 
 int main() { // Trémaux's Algorithm
-    currentNode = malloc(sizeof(struct node));
+    //currentNode = malloc(sizeof(struct node));
     initialiseNode();
-    currentNode = *nodes[0, 0];
-    printf("%d\n", currentNode->x);
-    currentNode -> x = 10;
-    printf("%d\n", currentNode->x);
-    printf("%d\n", (*nodes[0][0]).x);
+    currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
-            struct node *preNode = malloc(sizeof(struct node));
+            struct node *preNode;
             preNode = currentNode;
-
             moveAlongPath();
-
+            printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
+            addEdge(preNode, currentNode);
             printMatrix();
-            break;
+            continue;
+        }
+        if (currentNode->tag == Empty){
+
         }
 
 
