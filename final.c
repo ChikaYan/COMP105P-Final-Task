@@ -30,14 +30,13 @@ struct node {
     int x;
     int y;
     enum label tag;
-    struct node *connected[20];
-    int counter;
 };
 
 
 enum dir direction = up;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
+int matrix[4][5][4][5];
 
 int frontClear() {
     int fd = ping_cm(8);
@@ -104,16 +103,16 @@ void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
     switch (direction) {
         case up:
-            currentNode = nodes[currentNode->x, currentNode->y + 1];
+            currentNode = *nodes[currentNode->x, currentNode->y + 1];
             break;
         case right:
-            currentNode = nodes[currentNode->x + 1, currentNode->y];
+            currentNode = *nodes[currentNode->x + 1, currentNode->y];
             break;
         case down:
-            currentNode = nodes[currentNode->x, currentNode->y - 1];
+            currentNode = *nodes[currentNode->x, currentNode->y - 1];
             break;
         case left:
-            currentNode = nodes[currentNode->x - 1, currentNode->y];
+            currentNode = *nodes[currentNode->x - 1, currentNode->y];
     }
 }
 
@@ -143,37 +142,70 @@ void initialiseNode() {
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
             nodes[x][y]->tag = Empty;
-            nodes[x][y]->counter = 0;
-            for (int i = 0; i < 20; i++) {
-                nodes[x][y]->connected[i] = malloc(sizeof(struct node));
-                nodes[x][y]->connected[i] = NULL;
+        }
+    }
+    for (int x1 = 0; x1 < 4; x1++) {
+        for (int y1 = 0; y1 < 5; y1++) {
+            for (int x2 = 0; x2 < 4; x2++) {
+                for (int y2 = 0; y2 < 5; y2++) {
+                    matrix[x1][y1][x2][y2] = 0;
+                }
             }
         }
     }
+    //printf("%d\n", nodes[0][0]->x);
 }
 
 void addEdge(struct node *n1, struct node *n2) {
-    n1->connected[n1->counter] = n2;
-    n1->counter++;
-    n2->connected[n2->counter] = n1;
-    n2->counter++;
+    matrix[n1->x][n1->y][n2->x][n2->y] = 1;
+    matrix[n2->x][n2->y][n1->x][n1->y] = 1;
+}
+
+void printMatrix() {
+    printf("\n");
+    printf("      ");
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 5; y++) {
+            printf(" (%d,%d)", x, y);
+        }
+    }
+    printf("\n");
+    for (int x1 = 0; x1 < 4; x1++) {
+        for (int y1 = 0; y1 < 5; y1++) {
+            char nodeString[6];
+            nodeString[0] = '(';
+            nodeString[1] = x1 + '0';
+            nodeString[2] = ',';
+            nodeString[3] = y1 + '0';
+            nodeString[4] = ')';
+            printf("%6s", nodeString);
+            for (int x2 = 0; x2 < 4; x2++) {
+                for (int y2 = 0; y2 < 5; y2++) {
+                    printf("%6d", matrix[x1][y1][x2][y2]);
+                }
+            }
+            printf("\n");
+        }
+    }
 }
 
 int main() { // Trémaux's Algorithm
     currentNode = malloc(sizeof(struct node));
     initialiseNode();
-    currentNode = nodes[0, 0];
+    currentNode = *nodes[0, 0];
+    printf("%d\n", currentNode->x);
+    currentNode -> x = 10;
+    printf("%d\n", currentNode->x);
+    printf("%d\n", (*nodes[0][0]).x);
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
             struct node *preNode = malloc(sizeof(struct node));
             preNode = currentNode;
+
             moveAlongPath();
-            preNode->connected[preNode->counter] = currentNode;
-            preNode->counter++;
-//            currentNode->connected[currentNode->counter] = preNode;
-//            currentNode->counter++;
-            printf("preNode counter: %d\ncurrentNode counter: %d\n", preNode->counter, currentNode->counter);
+
+            printMatrix();
             break;
         }
 
