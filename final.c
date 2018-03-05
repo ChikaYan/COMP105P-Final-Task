@@ -8,8 +8,8 @@
 #include "ping.h"
 #include "basics.h"
 
-const int SQUARE_LENGTH = 124; // in ticks
-const int LR_THRESHOLD = 30; // in LRdis()
+const int SQUARE_LENGTH = 122; // in ticks
+const int LR_THRESHOLD = 39; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
 
 enum absoluteDir {
@@ -44,6 +44,8 @@ struct node {
     enum label tag;
 };
 
+struct node *findAdjacent(enum relativeDir targetDirection);
+void addEdge(struct node *n1, struct node *n2);
 
 enum absoluteDir direction = up;
 enum marchingDir marchingState = forward;
@@ -113,7 +115,7 @@ void turnLeft() {
 }
 
 void turnAround(){
-    drive_goto(51, -51);
+    drive_goto(52, -52); // TODO: find more accurate numbers
     switch (direction) {
         case up:
             direction = down;
@@ -144,6 +146,7 @@ void moveForward() {
         case left:
             currentNode = nodes[currentNode->x - 1][currentNode->y];
     }
+    addEdge(findAdjacent(back), currentNode);
 }
 
 int atJunction() {
@@ -183,7 +186,6 @@ void initialiseNode() {
             }
         }
     }
-    //printf("%d\n", nodes[0][0]->x);
 }
 
 void addEdge(struct node *n1, struct node *n2) {
@@ -268,58 +270,75 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
     }
 }
 
-void goToEmptyNode() {
-    if (leftClear() && findAdjacent(rLeft)->tag == Empty){
+void goToNodeWithTag(enum label tag) {
+    if (leftClear() && findAdjacent(rLeft)->tag == tag){
         turnLeft();
         moveForward();
         return;
     }
-    if (frontClear() && findAdjacent(front)->tag == Empty){
+    if (frontClear() && findAdjacent(front)->tag == tag){
         moveForward();
         return;
     }
-    if (rightClear() && findAdjacent(rRight)->tag == Empty){
+    if (rightClear() && findAdjacent(rRight)->tag == tag){
         turnRight();
         moveForward();
     }
 }
 
+int hasEmptyAdjNode(){
+    if (leftClear() && findAdjacent(rLeft)->tag == Empty){
+        return 1;
+    }
+    if (frontClear() && findAdjacent(front)->tag == Empty){
+        return 1;
+    }
+    if (rightClear() && findAdjacent(rRight)->tag == Empty){
+        return 1;
+    }
+    return 0;
+}
+
 int main() { // Trémaux's Algorithm
     initialiseNode();
+    //TODO: find out if malloc is needed
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
             if (leftClear() + rightClear() + frontClear() > 0){ // not dead end
-                struct node *preNode = currentNode; //TODO: find out if malloc is needed
                 moveAlongPath();
 //            printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
-                addEdge(preNode, currentNode);
             }else{
                 turnAround();
                 marchingState = backward;
                 moveForward();
             }
-
+            printMatrix();
+            continue;
         }
         // At junction:
         if (marchingState == forward){
             if (currentNode->tag == Empty) {
-                currentNode-> = OldJunction;
+                currentNode->tag = OldJunction;
                 findAdjacent(back)->tag = X;
-                goToEmptyNode();
-                continue;
-            }
-            if (currentNode->tag == OldJunction){
+                goToNodeWithTag(Empty);
+            }else if (currentNode->tag == OldJunction){
                 findAdjacent(back)->tag = N;
                 turnAround();
                 marchingState = backward;
                 moveForward();
             }
+        }else{
+            // marching backward -- has to be old junction
+            if (hasEmptyAdjNode()){
+                marchingState = forward;
+                goToNodeWithTag(Empty);
+            }else{
+                goToNodeWithTag(X);
+            }
         }
-
-
-
+        printMatrix();
     }
 
 }
