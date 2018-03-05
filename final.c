@@ -20,10 +20,15 @@ enum absoluteDir {
 };
 
 enum relativeDir {
-    forward,
+    front,
     back,
     rLeft,
     rRight
+};
+
+enum marchingDir{
+    forward,
+    backward
 };
 
 enum label {
@@ -41,6 +46,7 @@ struct node {
 
 
 enum absoluteDir direction = up;
+enum marchingDir marchingState = forward;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
 int matrix[4][5][4][5];
@@ -103,6 +109,23 @@ void turnLeft() {
             break;
         case left:
             direction = down;
+    }
+}
+
+void turnAround(){
+    drive_goto(51, -51);
+    switch (direction) {
+        case up:
+            direction = down;
+            break;
+        case right:
+            direction = left;
+            break;
+        case down:
+            direction = up;
+            break;
+        case left:
+            direction = right;
     }
 }
 
@@ -198,7 +221,7 @@ void printMatrix() {
 
 struct node *findAdjacent(enum relativeDir targetDirection) {
     switch (targetDirection) {
-        case forward:
+        case front:
             switch (direction) {
                 case up:
                     return nodes[currentNode->x][currentNode->y + 1];
@@ -245,22 +268,56 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
     }
 }
 
+void goToEmptyNode() {
+    if (leftClear() && findAdjacent(rLeft)->tag == Empty){
+        turnLeft();
+        moveForward();
+        return;
+    }
+    if (frontClear() && findAdjacent(front)->tag == Empty){
+        moveForward();
+        return;
+    }
+    if (rightClear() && findAdjacent(rRight)->tag == Empty){
+        turnRight();
+        moveForward();
+    }
+}
+
 int main() { // Trémaux's Algorithm
     initialiseNode();
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
-            struct node *preNode = currentNode; //TODO: find out if malloc is needed
-            moveAlongPath();
+            if (leftClear() + rightClear() + frontClear() > 0){ // not dead end
+                struct node *preNode = currentNode; //TODO: find out if malloc is needed
+                moveAlongPath();
 //            printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
-            addEdge(preNode, currentNode);
-            continue;
-        }
-        if (currentNode->tag == Empty) {
-            findAdjacent(back)->tag = X;
+                addEdge(preNode, currentNode);
+            }else{
+                turnAround();
+                marchingState = backward;
+                moveForward();
+            }
 
         }
+        // At junction:
+        if (marchingState == forward){
+            if (currentNode->tag == Empty) {
+                currentNode-> = OldJunction;
+                findAdjacent(back)->tag = X;
+                goToEmptyNode();
+                continue;
+            }
+            if (currentNode->tag == OldJunction){
+                findAdjacent(back)->tag = N;
+                turnAround();
+                marchingState = backward;
+                moveForward();
+            }
+        }
+
 
 
     }
