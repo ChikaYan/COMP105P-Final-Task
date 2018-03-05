@@ -12,11 +12,18 @@ const int SQUARE_LENGTH = 124; // in ticks
 const int LR_THRESHOLD = 30; // in LRdis()
 const int FRONT_THRESHOLD = 25; // in cm
 
-enum dir {
+enum absoluteDir {
     up,
     down,
     left,
     right
+};
+
+enum relativeDir {
+    forward,
+    back,
+    rLeft,
+    rRight
 };
 
 enum label {
@@ -33,7 +40,7 @@ struct node {
 };
 
 
-enum dir direction = up;
+enum absoluteDir direction = up;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
 int matrix[4][5][4][5];
@@ -189,22 +196,69 @@ void printMatrix() {
     }
 }
 
+struct node *findAdjacent(enum relativeDir targetDirection) {
+    switch (targetDirection) {
+        case forward:
+            switch (direction) {
+                case up:
+                    return nodes[currentNode->x][currentNode->y + 1];
+                case right:
+                    return nodes[currentNode->x + 1][currentNode->y];
+                case down:
+                    return nodes[currentNode->x][currentNode->y - 1];
+                case left:
+                    return nodes[currentNode->x - 1][currentNode->y];
+            }
+        case rRight:
+            switch (direction) {
+                case up:
+                    return nodes[currentNode->x + 1][currentNode->y];
+                case right:
+                    return nodes[currentNode->x][currentNode->y - 1];
+                case down:
+                    return nodes[currentNode->x - 1][currentNode->y];
+                case left:
+                    return nodes[currentNode->x][currentNode->y + 1];
+            }
+        case back:
+            switch (direction) {
+                case up:
+                    return nodes[currentNode->x][currentNode->y - 1];
+                case right:
+                    return nodes[currentNode->x - 1][currentNode->y];
+                case down:
+                    return nodes[currentNode->x][currentNode->y + 1];
+                case left:
+                    return nodes[currentNode->x + 1][currentNode->y];
+            }
+        case rLeft:
+            switch (direction) {
+                case up:
+                    return nodes[currentNode->x - 1][currentNode->y];
+                case right:
+                    return nodes[currentNode->x][currentNode->y + 1];
+                case down:
+                    return nodes[currentNode->x + 1][currentNode->y];
+                case left:
+                    return nodes[currentNode->x][currentNode->y - 1];
+            }
+    }
+}
+
 int main() { // Trémaux's Algorithm
-    //currentNode = malloc(sizeof(struct node));
     initialiseNode();
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
-            struct node *preNode;
-            preNode = currentNode;
+            struct node *preNode = currentNode; //TODO: find out if malloc is needed
             moveAlongPath();
-            printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
+//            printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             addEdge(preNode, currentNode);
-            printMatrix();
             continue;
         }
-        if (currentNode->tag == Empty){
+        if (currentNode->tag == Empty) {
+            findAdjacent(back)->tag = X;
 
         }
 
