@@ -8,9 +8,9 @@
 #include "ping.h"
 #include "basics.h"
 
-const int SQUARE_LENGTH = 122; // in ticks
+const int SQUARE_LENGTH = 122; // in ticks (40cm?)
 const int LR_THRESHOLD = 39.5; // in LRdis()
-const int FRONT_THRESHOLD = 25; // in cm
+const int FRONT_THRESHOLD = 30; // in cm
 
 enum absoluteDir {
     up,
@@ -187,6 +187,9 @@ void moveForward() {
 
 int atJunction() {
     if (frontClear() + leftClear() + rightClear() >= 2) {
+        printf("Front clear: %d\n", frontClear());
+        printf("Left clear: %d\n", leftClear());
+        printf("Right clear: %d\n", rightClear());
         return 1;
     }
     return 0;
@@ -351,6 +354,7 @@ int main() { // Trémaux's Algorithm
                 moveAlongPath();
 //              printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             } else {
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("3. Marching forward into a dead end.\n");
                 turnAround();
                 marchingState = backward;
@@ -362,12 +366,14 @@ int main() { // Trémaux's Algorithm
         // At junction:
         if (marchingState == forward) {
             if (!atOldJunction()) {
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("1. Marching forward into a new junction:\n");
                 findAdjacent(back)->tag = X;
-                printf("find Adjacent(back) pass\n");
+//                printf("find Adjacent(back) pass\n");
                 goToNodeWithTag(Empty);
-                printf("goToNodeWithTag(Empty) pass\n");
+//                printf("goToNodeWithTag(Empty) pass\n");
             } else if (atOldJunction()) {
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("2. Marching forward into an old junction:\n");
                 findAdjacent(back)->tag = N;
                 turnAround();
@@ -377,12 +383,14 @@ int main() { // Trémaux's Algorithm
         } else {
             // marching backward -- has to be old junction
             if (hasEmptyAdjNode()) {
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("4. Marching backward into a junction with some unlabeled passages\n");
                 findAdjacent(back)->tag = N;
                 marchingState = forward;
                 goToNodeWithTag(Empty);
-                currentNode-> tag = N;
+                currentNode->tag = N;
             } else {
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("5. Marching backward into a junction with no unlabeled passages\n");
                 goToNodeWithTag(X);
             }
