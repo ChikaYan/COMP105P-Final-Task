@@ -8,7 +8,7 @@
 #include "ping.h"
 #include "basics.h"
 
-const int SQUARE_LENGTH = 122; // in ticks (40cm?)
+const int SQUARE_LENGTH = 123; // in ticks (40cm?)
 const int LR_THRESHOLD = 39.5; // in LRdis()
 const int FRONT_THRESHOLD = 30; // in cm
 
@@ -53,12 +53,18 @@ int turnLog = 0;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
 int matrix[4][5][4][5];
+int botReposition;
 
 int frontClear() {
     int fd = ping_cm(8);
     printf("Front distance is: %d\n", fd);
     if (fd >= FRONT_THRESHOLD) {
         return 1;
+    }
+    botReposition = (30 - fd);
+    if (botReposition > 2) {
+        botReposition /= 3.25;
+        drive_goto(-botReposition, -botReposition);
     }
     return 0;
 }

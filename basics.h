@@ -22,6 +22,7 @@ void stopTrail() {
 }
 
 void moveBot(int x) {
+    x /= 0.325;
     drive_goto(x, x);
 }
 
