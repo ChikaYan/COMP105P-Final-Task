@@ -60,17 +60,17 @@ int turnLog = 0;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
 int matrix[4][5][4][5];
-int botReposition;
+
 
 int frontClear() {
     int fd = ping_cm(8);
-//    printf("Front distance is: %d\n", fd);
+    printf("Front distance is: %d\n", fd);
     if (fd >= FRONT_THRESHOLD) {
         return 1;
     }
-    botReposition = (20 - fd);
-    if (botReposition > 2) {
-        botReposition /= 3.25;
+    int botReposition = (18 - fd);
+    if (botReposition > 1 || botReposition < -1) {
+        botReposition /= 0.325;
         drive_goto(-botReposition, -botReposition);
     }
     return 0;
@@ -155,7 +155,7 @@ void turnAround() {
         turnRight();
         turnRight();
     } else {
-        drive_goto(51, -52); // TODO: find more accurate numbers
+        drive_goto(51, -52);
         switch (direction) {
             case up:
                 direction = down;
@@ -374,15 +374,21 @@ int atOldJunction() {
 
 int main() { // Trémaux's Algorithm
     initialiseNode();
+    simulator_startNewSmokeTrail();
     //TODO: find out if malloc is needed
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
         if (!atJunction()) {
+            printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
             if (leftClear() + rightClear() + frontClear() > 0) { // not dead end
                 moveAlongPath();
 //              printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             } else {
+                if (currentNode == nodes[0][0]){
+                    printf("Traversed the maze\n");
+                    break;
+                }
                 printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
                 printf("3. Marching forward into a dead end.\n");
                 turnAround();
