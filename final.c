@@ -7,10 +7,17 @@
 #include "simpletools.h"
 #include "ping.h"
 #include "basics.h"
+#include "simulator.h"
 
 const int SQUARE_LENGTH = 123; // in ticks (40cm?)
 const int LR_THRESHOLD = 39.5; // in LRdis()
 const int FRONT_THRESHOLD = 30; // in cm
+
+void printDegree() {
+    double pi = 3.1415926, x = 0, y = 0, degree = 0;
+    simulator_getPose(&x, &y, &degree);
+    printf("Current degree: %f\n", degree * 180.0 / pi);
+}
 
 enum absoluteDir {
     up,
@@ -57,11 +64,11 @@ int botReposition;
 
 int frontClear() {
     int fd = ping_cm(8);
-    printf("Front distance is: %d\n", fd);
+//    printf("Front distance is: %d\n", fd);
     if (fd >= FRONT_THRESHOLD) {
         return 1;
     }
-    botReposition = (30 - fd);
+    botReposition = (20 - fd);
     if (botReposition > 2) {
         botReposition /= 3.25;
         drive_goto(-botReposition, -botReposition);
@@ -71,7 +78,7 @@ int frontClear() {
 
 int leftClear() {
     float ld = leftDis();
-    printf("Left distance is: %f\n", ld);
+//    printf("Left distance is: %f\n", ld);
     if (ld >= LR_THRESHOLD) {
         return 1;
     }
@@ -80,7 +87,7 @@ int leftClear() {
 
 int rightClear() {
     float right_dis = rightDis();
-    printf("Right distance is: %f\n", right_dis);
+//    printf("Right distance is: %f\n", right_dis);
     if (right_dis >= LR_THRESHOLD) {
         return 1;
     }
@@ -88,8 +95,16 @@ int rightClear() {
 }
 
 void turnRight() {
-    drive_goto(26, -25);
-    turnLog += 1;
+    if (turnLog > 0) {
+        // turn left first then turn around
+        drive_goto(-25, 26);
+        drive_goto(51, -52);
+        turnLog -= 1;
+    } else {
+        drive_goto(26, -25);
+        turnLog += 1;
+    }
+
     switch (direction) {
         case up:
             direction = right;
@@ -103,11 +118,19 @@ void turnRight() {
         case left:
             direction = up;
     }
+    printDegree();
 }
 
 void turnLeft() {
-    drive_goto(-25, 26);
-    turnLog -= 1;
+    if (turnLog < 0) {
+        drive_goto(26, -25);
+        drive_goto(51, -52);
+        turnLog += 1;
+    } else {
+        drive_goto(-25, 26);
+        turnLog -= 1;
+    }
+
     switch (direction) {
         case up:
             direction = left;
@@ -121,6 +144,7 @@ void turnLeft() {
         case left:
             direction = down;
     }
+    printDegree();
 }
 
 void turnAround() {
@@ -131,7 +155,7 @@ void turnAround() {
         turnRight();
         turnRight();
     } else {
-        drive_goto(51, -51); // TODO: find more accurate numbers
+        drive_goto(51, -52); // TODO: find more accurate numbers
         switch (direction) {
             case up:
                 direction = down;
@@ -146,6 +170,7 @@ void turnAround() {
                 direction = right;
         }
     }
+    printDegree();
 }
 
 void turnReset() {
@@ -161,16 +186,15 @@ void turnReset() {
         turnRight();
         turnRight();
     }
-
-//    if (turnLog == 2){
-//        turnLeft();
-//        turnLeft();
-//        drive_goto(51, -51);
-//    }else if (turnLog == -2){
-//        turnRight();
-//        turnRight();
-//        drive_goto(51, -51);
-//    }
+    if (turnLog == 2) {
+        turnLeft();
+        turnLeft();
+        drive_goto(51, -51);
+    } else if (turnLog == -2) {
+        turnRight();
+        turnRight();
+        drive_goto(51, -51);
+    }
 }
 
 void moveForward() {
@@ -189,13 +213,14 @@ void moveForward() {
             currentNode = nodes[currentNode->x - 1][currentNode->y];
     }
     addEdge(findAdjacent(back), currentNode);
+    printDegree();
 }
 
 int atJunction() {
     if (frontClear() + leftClear() + rightClear() >= 2) {
-        printf("Front clear: %d\n", frontClear());
-        printf("Left clear: %d\n", leftClear());
-        printf("Right clear: %d\n", rightClear());
+//        printf("Front clear: %d\n", frontClear());
+//        printf("Left clear: %d\n", leftClear());
+//        printf("Right clear: %d\n", rightClear());
         return 1;
     }
     return 0;
@@ -342,7 +367,6 @@ int hasEmptyAdjNode() {
 int atOldJunction() {
     if ((leftClear() && findAdjacent(rLeft)->tag != Empty) || (frontClear() && findAdjacent(front)->tag != Empty) ||
         (rightClear() && findAdjacent(rRight)->tag != Empty)) {
-        printf("atOldJunction pass\n");
         return 1;
     }
     return 0;
@@ -354,13 +378,12 @@ int main() { // Trémaux's Algorithm
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
-        turnReset();
         if (!atJunction()) {
             if (leftClear() + rightClear() + frontClear() > 0) { // not dead end
                 moveAlongPath();
 //              printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             } else {
-                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
+                printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
                 printf("3. Marching forward into a dead end.\n");
                 turnAround();
                 marchingState = backward;
