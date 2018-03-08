@@ -50,6 +50,12 @@ struct node {
     enum label tag;
 };
 
+struct queueMember {
+    struct node *n;
+    int counter;
+    struct node *path[30];
+};
+
 struct node *findAdjacent(enum relativeDir targetDirection);
 
 void addEdge(struct node *n1, struct node *n2);
@@ -60,7 +66,9 @@ int turnLog = 0;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
 int matrix[4][5][4][5];
-
+struct queueMember *queue[40];
+int qFront = 1, qRear = 0;
+int visited[4][5];
 
 int frontClear() {
     int fd = ping_cm(8);
@@ -173,30 +181,6 @@ void turnAround() {
     printDegree();
 }
 
-void turnReset() {
-    while (turnLog >= 3) {
-        turnLeft();
-        turnLeft();
-        turnLeft();
-        turnLeft();
-    }
-    while (turnLog <= -3) {
-        turnRight();
-        turnRight();
-        turnRight();
-        turnRight();
-    }
-    if (turnLog == 2) {
-        turnLeft();
-        turnLeft();
-        drive_goto(51, -51);
-    } else if (turnLog == -2) {
-        turnRight();
-        turnRight();
-        drive_goto(51, -51);
-    }
-}
-
 void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
     switch (direction) {
@@ -245,6 +229,7 @@ void initialiseNode() {
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
             nodes[x][y]->tag = Empty;
+            visited[4][5] = 0;
         }
     }
     for (int x1 = 0; x1 < 4; x1++) {
@@ -372,10 +357,80 @@ int atOldJunction() {
     return 0;
 }
 
+struct queueMember *bfs(struct queueMember *current) {
+    int x = current->n->x, y = current->n->y;\
+    visited[x][y] = 1;
+    qRear++;
+
+    if (x == 3 && y == 4) { // final destination reached
+        current->path[current->counter] = nodes[3][4];
+        current->counter++;
+        return current;
+    }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 5; j++) {
+            if (matrix[x][y][i][j] && !visited[i][j]) { // current node connects to node (i,j)
+                queue[qFront]->n = nodes[i][j];
+                for (int k = 0; k < current->counter; k++) {
+                    queue[qFront]->path[k] = current->path[k];
+                }
+                queue[qFront]->path[current->counter] = nodes[x][y];
+                queue[qFront]->counter = current->counter + 1;
+                qFront++;
+            }
+        }
+    }
+
+    return bfs(queue[qRear]);
+
+}
+
+struct queueMember *findPath() {
+    for (int i = 0; i < 40; i++) {
+        queue[i] = malloc(sizeof(struct queueMember));
+        queue[i]->counter = 0;
+        queue[i]->n = malloc(sizeof(struct node));
+        for (int j = 0; j < 30; j++) {
+            queue[i]->path[j] = malloc(sizeof(struct node));
+            queue[i]->path[j] = NULL;
+        }
+    }
+
+    queue[0]->n = nodes[0][0];
+    struct queueMember *p = malloc(sizeof(struct queueMember));
+    p = bfs(queue[qRear]);
+    printf("\nPath is: \n");
+    for (int i = 0; i < p->counter; i++) {
+        printf("(%d, %d)  ", p->path[i]->x, p->path[i]->y);
+    }
+    printf("\n");
+    return p;
+}
+
+
+void goToNode(struct node *n) {
+    if (n->x == findAdjacent(front)->x && n->y == findAdjacent(front)->y) {
+        moveForward();
+    } else if (n->x == findAdjacent(rRight)->x && n->y == findAdjacent(rRight)->y) {
+        turnRight();
+        moveForward();
+    } else if (n->x == findAdjacent(back)->x && n->y == findAdjacent(back)->y) {
+        turnAround();
+        moveForward();
+    } else if (n->x == findAdjacent(rLeft)->x && n->y == findAdjacent(rLeft)->y) {
+        turnLeft();
+        moveForward();
+    } else {
+        printf("\nERROR\n");
+    }
+
+}
+
 int main() { // Trémaux's Algorithm
     initialiseNode();
     simulator_startNewSmokeTrail();
     //TODO: find out if malloc is needed
+    currentNode = malloc(sizeof(struct node));
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
@@ -385,7 +440,7 @@ int main() { // Trémaux's Algorithm
                 moveAlongPath();
 //              printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             } else {
-                if (currentNode == nodes[0][0]){
+                if (currentNode == nodes[0][0]) {
                     printf("Traversed the maze\n");
                     break;
                 }
@@ -404,7 +459,7 @@ int main() { // Trémaux's Algorithm
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("1. Marching forward into a new junction:\n");
                 findAdjacent(back)->tag = X;
-//                printf("find Adjacent(back) pass\n");
+//               printf("find Adjacent(back) pass\n");
                 goToNodeWithTag(Empty);
 //                printf("goToNodeWithTag(Empty) pass\n");
             } else if (atOldJunction()) {
@@ -430,7 +485,18 @@ int main() { // Trémaux's Algorithm
                 goToNodeWithTag(X);
             }
         }
-        //printMatrix();
+
+
+    }
+    printMatrix();
+    struct queueMember *p = malloc(sizeof(struct queueMember));
+    p = findPath();
+    currentNode = nodes[0][0];
+    turnAround();
+    printf("pass");
+    for (int i = 0; i < p->counter; i++) {
+        goToNode(p->path[i]);
+
     }
 
 }
