@@ -65,10 +65,13 @@ enum marchingDir marchingState = forward;
 int turnLog = 0;
 struct node *currentNode = NULL;
 struct node *nodes[4][5];
+
 int matrix[4][5][4][5];
 struct queueMember *queue[40];
 int qFront = 1, qRear = 0;
 int visited[4][5];
+struct queueMember *paths[20];
+int pathCounter = 0;
 
 int frontClear() {
     int fd = ping_cm(8);
@@ -357,19 +360,35 @@ int atOldJunction() {
     return 0;
 }
 
-struct queueMember *bfs(struct queueMember *current) {
-    int x = current->n->x, y = current->n->y;\
-    visited[x][y] = 1;
+void bfs(struct queueMember *current) {
+    int x = current->n->x, y = current->n->y;
+//    visited[x][y] = 1;
     qRear++;
 
     if (x == 3 && y == 4) { // final destination reached
         current->path[current->counter] = nodes[3][4];
         current->counter++;
-        return current;
+        paths[pathCounter] = current; //TODO: find out if init is needed
+        pathCounter++;
+        if (qRear >= qFront) { // queue empty
+            return;
+        }
+        bfs(queue[qRear]);
     }
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 5; j++) {
-            if (matrix[x][y][i][j] && !visited[i][j]) { // current node connects to node (i,j)
+            if (matrix[x][y][i][j]) { // current node connects to node (i,j)
+                // check if target node is visited already
+                int nodeVisited = 0;
+                for (int k = 0; k < current->counter; k++) {
+                    if (current->path[k] == nodes[i][j]) {
+                        nodeVisited = 1;
+                        break;
+                    }
+                }
+                if (nodeVisited) {
+                    continue;
+                }
                 queue[qFront]->n = nodes[i][j];
                 for (int k = 0; k < current->counter; k++) {
                     queue[qFront]->path[k] = current->path[k];
@@ -380,9 +399,90 @@ struct queueMember *bfs(struct queueMember *current) {
             }
         }
     }
+    if (qRear >= qFront) { // queue empty
+        return;
+    }
+    bfs(queue[qRear]);
+}
 
-    return bfs(queue[qRear]);
+struct queueMember *findBestPath() {
+    int bestPathIndex = 0;
+    float bestTime = 99999;
+    for (int i = 0; i < pathCounter; i++) {
+        struct queueMember *p = paths[i];
+        float time = 0;
+        int j = 0;
+        struct node *simulateNode = nodes[0][0];
+        while (j < p->counter) {
 
+            int changeX = p->path[j]->x - simulateNode->x;
+            int changeY = p->path[j]->y - simulateNode->y;
+//            printf("simulateNode is: (%d,%d)\n", simulateNode->x, simulateNode->y);
+//            printf("next node is: (%d,%d)\n", p->path[j]->x, p->path[j]->y);
+            int step = 1;
+            if (changeX != 0 && changeY != 0) {
+                printf("\nERROR: changX and changY both != 0\nchangeX: %d\nchangeY: %d\n", changeX, changeY);
+            }
+            if (j + 1 < p->counter) {
+                while (changeX != 0 && changeY == 0 && p->path[j + 1]->x - p->path[j]->x == changeX) {
+                    step++;
+                    j++;
+                    if (j + 1 >= p->counter) {
+                        break;
+                    }
+                }
+                while (changeY != 0 && changeX == 0 && p->path[j + 1]->y - p->path[j]->y == changeY) {
+                    step++;
+                    j++;
+                    if (j + 1 >= p->counter) {
+                        break;
+                    }
+                }
+            }
+            if (changeX > 0) {
+                if (currentDir != right) {
+                    time += 3.264;
+                }
+            } else if (changeX < 0) {
+                if (currentDir != left) {
+                    time += 3.264;
+                }
+            } else if (changeY > 0) {
+                if (currentDir != up) {
+                    time += 3.264;
+                }
+            } else if (changeY < 0) {
+                if (currentDir != down) {
+                    time += 3.264;
+                }
+            }
+            switch (step) {
+                case 1:
+                    time += 7.622;
+                    break;
+                case 2:
+                    time += 7.674;
+                    break;
+                case 3:
+                    time += 9.582;
+                    break;
+                case 4:
+                    time += 11.312;
+            }
+            simulateNode = p->path[j];
+            j++;
+        }
+        printf("\nPath %d is:", i);
+        for (int k = 0; k < p->counter; k++) {
+            printf("(%d, %d)  ", p->path[k]->x, p->path[k]->y);
+        }
+        printf("\ntime needed is: %f\n", time);
+        if (time < bestTime) {
+            bestTime = time;
+            bestPathIndex = i;
+        }
+    }
+    return paths[bestPathIndex];
 }
 
 struct queueMember *findPath() {
@@ -397,14 +497,9 @@ struct queueMember *findPath() {
     }
 
     queue[0]->n = nodes[0][0];
-    struct queueMember *p = malloc(sizeof(struct queueMember));
-    p = bfs(queue[qRear]);
-    printf("\nPath is: \n");
-    for (int i = 0; i < p->counter; i++) {
-        printf("(%d, %d)  ", p->path[i]->x, p->path[i]->y);
-    }
-    printf("\n");
-    return p;
+    bfs(queue[qRear]);
+
+    return findBestPath();
 }
 
 void turnToAbsolute(enum absoluteDir dir) {
@@ -426,7 +521,6 @@ void turnToAbsolute(enum absoluteDir dir) {
         case right:
             switch (currentDir) {
                 case up:
-                    printf("turn to absolute right\n");
                     turnRight();
                     break;
                 case right:
@@ -567,11 +661,17 @@ int main() { // Trémaux's Algorithm
                 step++;
                 i++;
                 printf("Move in x direction for step %d\n", step);
+                if (i + 1 >= p->counter) {
+                    break;
+                }
             }
             while (changeY != 0 && changeX == 0 && p->path[i + 1]->y - p->path[i]->y == changeY) {
                 step++;
                 i++;
                 printf("Move in y direction for step %d\n", step);
+                if (i + 1 >= p->counter) {
+                    break;
+                }
             }
         }
         if (changeX > 0) {
@@ -595,71 +695,3 @@ int main() { // Trémaux's Algorithm
     }
 
 }
-// Tremaux's Algorithm
-// 1) Enter new junction: (current_pos != X)
-//      a) current_pos = X
-//      b) new_passage = N
-//      c) march to new_passage
-//
-// 2) Enter old junction (current_pos == X, previous_junction != current_pos)
-//      a) current_passage = N
-//      b) turn around and march back
-//
-// 3) Dead_end (sensor)
-//      a) turn around and march back
-//
-// 4) Return old junction + unlabeled passage (current_pos == X, previous_junction == current_pos)
-//      a) new_passage_2 = N
-//      b) march to new_passage_2
-//
-//  5) Return old junction + no unlabeled passage (current_pos == X, previous_juntion == current_pos)
-//      a) return to X
-
-
-//int main() { // Pledge Algorithm
-//    drive_goto(30, 30); // initialize to first middle point
-//    while (1) {
-//        if (counter < 0) {
-//            if (rightClear()) {
-//                turnRight();
-//                moveForward();
-//                continue;
-//            }
-//            if (frontClear()) {
-//                moveForward();
-//                continue;
-//            }
-//            turnLeft();
-//
-//        } else if (counter > 0) {
-//            if (leftClear()) {
-//                turnLeft();
-//                moveForward();
-//                continue;
-//            }
-//            if (frontClear()) {
-//                moveForward();
-//                continue;
-//            }
-//            turnRight();
-//
-//        } else {
-//            if (frontClear()) {
-//                moveForward();
-//            } else {
-//                turnRight();
-//            }
-//        }
-//    }
-//}
-
-
-// Pledge algorithm
-// 1) reach obstacle in front, start pledge algorithm
-// 2) turn right
-// 3) for every movement below:
-//    (a) Obstacle: LEFT, No Obstacle: FRONT -----> move forward
-//    (b) Obstacle: LEFT + FRONT -----------------> turn right
-// 4) keep looping until counter reach 0
-// 5) end Pledge algorithm
-
