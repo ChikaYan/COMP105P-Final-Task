@@ -60,7 +60,7 @@ struct node *findAdjacent(enum relativeDir targetDirection);
 
 void addEdge(struct node *n1, struct node *n2);
 
-enum absoluteDir direction = up;
+enum absoluteDir currentDir = up;
 enum marchingDir marchingState = forward;
 int turnLog = 0;
 struct node *currentNode = NULL;
@@ -113,18 +113,18 @@ void turnRight() {
         turnLog += 1;
     }
 
-    switch (direction) {
+    switch (currentDir) {
         case up:
-            direction = right;
+            currentDir = right;
             break;
         case right:
-            direction = down;
+            currentDir = down;
             break;
         case down:
-            direction = left;
+            currentDir = left;
             break;
         case left:
-            direction = up;
+            currentDir = up;
     }
     printDegree();
 }
@@ -139,18 +139,18 @@ void turnLeft() {
         turnLog -= 1;
     }
 
-    switch (direction) {
+    switch (currentDir) {
         case up:
-            direction = left;
+            currentDir = left;
             break;
         case right:
-            direction = up;
+            currentDir = up;
             break;
         case down:
-            direction = right;
+            currentDir = right;
             break;
         case left:
-            direction = down;
+            currentDir = down;
     }
     printDegree();
 }
@@ -164,18 +164,18 @@ void turnAround() {
         turnRight();
     } else {
         drive_goto(51, -52);
-        switch (direction) {
+        switch (currentDir) {
             case up:
-                direction = down;
+                currentDir = down;
                 break;
             case right:
-                direction = left;
+                currentDir = left;
                 break;
             case down:
-                direction = up;
+                currentDir = up;
                 break;
             case left:
-                direction = right;
+                currentDir = right;
         }
     }
     printDegree();
@@ -183,7 +183,7 @@ void turnAround() {
 
 void moveForward() {
     drive_goto(SQUARE_LENGTH, SQUARE_LENGTH);
-    switch (direction) {
+    switch (currentDir) {
         case up:
             currentNode = nodes[currentNode->x][currentNode->y + 1];
             break;
@@ -279,7 +279,7 @@ void printMatrix() {
 struct node *findAdjacent(enum relativeDir targetDirection) {
     switch (targetDirection) {
         case front:
-            switch (direction) {
+            switch (currentDir) {
                 case up:
                     return nodes[currentNode->x][currentNode->y + 1];
                 case right:
@@ -290,7 +290,7 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
                     return nodes[currentNode->x - 1][currentNode->y];
             }
         case rRight:
-            switch (direction) {
+            switch (currentDir) {
                 case up:
                     return nodes[currentNode->x + 1][currentNode->y];
                 case right:
@@ -301,7 +301,7 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
                     return nodes[currentNode->x][currentNode->y + 1];
             }
         case back:
-            switch (direction) {
+            switch (currentDir) {
                 case up:
                     return nodes[currentNode->x][currentNode->y - 1];
                 case right:
@@ -312,7 +312,7 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
                     return nodes[currentNode->x + 1][currentNode->y];
             }
         case rLeft:
-            switch (direction) {
+            switch (currentDir) {
                 case up:
                     return nodes[currentNode->x - 1][currentNode->y];
                 case right:
@@ -407,6 +407,66 @@ struct queueMember *findPath() {
     return p;
 }
 
+void turnToAbsolute(enum absoluteDir dir) {
+    switch (dir) {
+        case up:
+            switch (currentDir) {
+                case up:
+                    break;
+                case right:
+                    turnLeft();
+                    break;
+                case down:
+                    turnAround();
+                    break;
+                case left:
+                    turnRight();
+            }
+            break;
+        case right:
+            switch (currentDir) {
+                case up:
+                    printf("turn to absolute right\n");
+                    turnRight();
+                    break;
+                case right:
+                    break;
+                case down:
+                    turnLeft();
+                    break;
+                case left:
+                    turnAround();
+            }
+            break;
+        case down:
+            switch (currentDir) {
+                case up:
+                    turnAround();
+                    break;
+                case right:
+                    turnRight();
+                    break;
+                case down:
+                    break;
+                case left:
+                    turnRight();
+            }
+            break;
+        case left:
+            switch (currentDir) {
+                case up:
+                    turnLeft();
+                    break;
+                case right:
+                    turnAround();
+                    break;
+                case down:
+                    turnRight();
+                    break;
+            }
+    }
+}
+
 
 void goToNode(struct node *n) {
     if (n->x == findAdjacent(front)->x && n->y == findAdjacent(front)->y) {
@@ -415,7 +475,7 @@ void goToNode(struct node *n) {
         turnRight();
         moveForward();
     } else if (n->x == findAdjacent(back)->x && n->y == findAdjacent(back)->y) {
-        turnAround();
+        turnAround(); // usually won't happen
         moveForward();
     } else if (n->x == findAdjacent(rLeft)->x && n->y == findAdjacent(rLeft)->y) {
         turnLeft();
@@ -485,18 +545,53 @@ int main() { // Trémaux's Algorithm
                 goToNodeWithTag(X);
             }
         }
-
-
     }
+
     printMatrix();
     struct queueMember *p = malloc(sizeof(struct queueMember));
     p = findPath();
+
     currentNode = nodes[0][0];
     turnAround();
-    printf("pass");
-    for (int i = 0; i < p->counter; i++) {
-        goToNode(p->path[i]);
-
+    printf("\n**********HEADING BACK**********\n");
+    int i = 1;
+    while (i < p->counter) {
+        int changeX = p->path[i]->x - currentNode->x;
+        int changeY = p->path[i]->y - currentNode->y;
+        int step = 1;
+        if (changeX != 0 && changeY != 0) {
+            printf("\nERROR: changX and changY both != 0\n");
+        }
+        if (i + 1 < p->counter) {
+            while (changeX != 0 && changeY == 0 && p->path[i + 1]->x - p->path[i]->x == changeX) {
+                step++;
+                i++;
+                printf("Move in x direction for step %d\n", step);
+            }
+            while (changeY != 0 && changeX == 0 && p->path[i + 1]->y - p->path[i]->y == changeY) {
+                step++;
+                i++;
+                printf("Move in y direction for step %d\n", step);
+            }
+        }
+        if (changeX > 0) {
+            printf("Facing right\n");
+            turnToAbsolute(right);
+        } else if (changeX < 0) {
+            printf("Facing left\n");
+            turnToAbsolute(left);
+        } else if (changeY > 0) {
+            printf("Facing up\n");
+            turnToAbsolute(up);
+        } else if (changeY < 0) {
+            printf("Facing down\n");
+            turnToAbsolute(down);
+        }
+        printf("Moving forward for step: %d\n", step);
+        drive_goto(SQUARE_LENGTH * step, SQUARE_LENGTH * step);
+        currentNode = p->path[i];
+        printf("At node (%d,%d)\n", currentNode->x, currentNode->y);
+        i++;
     }
 
 }
