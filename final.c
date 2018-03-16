@@ -13,11 +13,6 @@ const int SQUARE_LENGTH = 123; // in ticks (40cm?)
 const int LR_THRESHOLD = 39.5; // in LRdis()
 const int FRONT_THRESHOLD = 30; // in cm
 
-void printDegree() {
-    double pi = 3.1415926, x = 0, y = 0, degree = 0;
-    simulator_getPose(&x, &y, &degree);
-    printf("Current degree: %f\n", degree * 180.0 / pi);
-}
 
 enum absoluteDir {
     up,
@@ -47,6 +42,7 @@ enum label {
 struct node {
     int x;
     int y;
+    int junction;
     enum label tag;
 };
 
@@ -80,7 +76,7 @@ int frontClear() {
         return 1;
     }
     int botReposition = (18 - fd);
-    if (botReposition > 1 || botReposition < -1) {
+    if (botReposition > 0 || botReposition < 0) { // TODO: find out if its too accurate?
         botReposition /= 0.325;
         drive_goto(-botReposition, -botReposition);
     }
@@ -108,7 +104,7 @@ int rightClear() {
 void turnRight() {
     if (turnLog > 0) {
         // turn left first then turn around
-        drive_goto(-25, 26);
+        drive_goto(-25, 26); // TODO: try 25 -26
         drive_goto(51, -52);
         turnLog -= 1;
     } else {
@@ -129,7 +125,9 @@ void turnRight() {
         case left:
             currentDir = up;
     }
-    printDegree();
+    if (marchingState == backward){
+        frontClear();
+    }
 }
 
 void turnLeft() {
@@ -155,7 +153,9 @@ void turnLeft() {
         case left:
             currentDir = down;
     }
-    printDegree();
+    if (marchingState == backward){
+        frontClear();
+    }
 }
 
 void turnAround() {
@@ -181,7 +181,6 @@ void turnAround() {
                 currentDir = right;
         }
     }
-    printDegree();
 }
 
 void moveForward() {
@@ -200,29 +199,56 @@ void moveForward() {
             currentNode = nodes[currentNode->x - 1][currentNode->y];
     }
     addEdge(findAdjacent(back), currentNode);
-    printDegree();
+}
+
+void moveBackward() {
+    drive_goto(-SQUARE_LENGTH, -SQUARE_LENGTH);
+    switch (currentDir) {
+        case up:
+            currentNode = nodes[currentNode->x][currentNode->y - 1];
+            break;
+        case right:
+            currentNode = nodes[currentNode->x - 1][currentNode->y];
+            break;
+        case down:
+            currentNode = nodes[currentNode->x][currentNode->y + 1];
+            break;
+        case left:
+            currentNode = nodes[currentNode->x + 1][currentNode->y];
+    }
+    addEdge(findAdjacent(front), currentNode);
 }
 
 int atJunction() {
     if (frontClear() + leftClear() + rightClear() >= 2) {
-//        printf("Front clear: %d\n", frontClear());
-//        printf("Left clear: %d\n", leftClear());
-//        printf("Right clear: %d\n", rightClear());
         return 1;
     }
     return 0;
 }
 
 void moveAlongPath() {
-    if (frontClear()) {
-        moveForward();
-    } else if (leftClear()) {
-        turnLeft();
-        moveForward();
+    if (marchingState == forward) {
+        if (frontClear()) {
+            moveForward();
+        } else if (leftClear()) {
+            turnLeft();
+            moveForward();
+        } else {
+            turnRight();
+            moveForward();
+        }
     } else {
-        turnRight();
-        moveForward();
+        if (leftClear()) {
+            turnRight();
+            moveBackward();
+        } else if (rightClear()) {
+            turnLeft();
+            moveBackward();
+        } else {
+            moveBackward();
+        }
     }
+
 }
 
 void initialiseNode() {
@@ -232,6 +258,7 @@ void initialiseNode() {
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
             nodes[x][y]->tag = Empty;
+            nodes[x][y]->junction = 0;
             visited[4][5] = 0;
         }
     }
@@ -329,19 +356,35 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
 }
 
 void goToNodeWithTag(enum label tag) {
-    if (leftClear() && findAdjacent(rLeft)->tag == tag) {
-        turnLeft();
-        moveForward();
-        return;
+    if (marchingState == forward) {
+        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
+            turnLeft();
+            moveForward();
+            return;
+        }
+        if (frontClear() && findAdjacent(front)->tag == tag) {
+            moveForward();
+            return;
+        }
+        if (rightClear() && findAdjacent(rRight)->tag == tag) {
+            turnRight();
+            moveForward();
+        }
+    } else {
+        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
+            turnRight();
+            moveBackward();
+            return;
+        }
+        if (rightClear() && findAdjacent(rRight)->tag == tag) {
+            turnLeft();
+            moveBackward();
+            return;
+        }
+        // checked left and right, must be back
+        moveBackward();
     }
-    if (frontClear() && findAdjacent(front)->tag == tag) {
-        moveForward();
-        return;
-    }
-    if (rightClear() && findAdjacent(rRight)->tag == tag) {
-        turnRight();
-        moveForward();
-    }
+
 }
 
 int hasEmptyAdjNode() {
@@ -417,8 +460,6 @@ struct queueMember *findBestPath() {
 
             int changeX = p->path[j]->x - simulateNode->x;
             int changeY = p->path[j]->y - simulateNode->y;
-//            printf("simulateNode is: (%d,%d)\n", simulateNode->x, simulateNode->y);
-//            printf("next node is: (%d,%d)\n", p->path[j]->x, p->path[j]->y);
             int step = 1;
             if (changeX != 0 && changeY != 0) {
                 printf("\nERROR: changX and changY both != 0\nchangeX: %d\nchangeY: %d\n", changeX, changeY);
@@ -562,24 +603,6 @@ void turnToAbsolute(enum absoluteDir dir) {
 }
 
 
-void goToNode(struct node *n) {
-    if (n->x == findAdjacent(front)->x && n->y == findAdjacent(front)->y) {
-        moveForward();
-    } else if (n->x == findAdjacent(rRight)->x && n->y == findAdjacent(rRight)->y) {
-        turnRight();
-        moveForward();
-    } else if (n->x == findAdjacent(back)->x && n->y == findAdjacent(back)->y) {
-        turnAround(); // usually won't happen
-        moveForward();
-    } else if (n->x == findAdjacent(rLeft)->x && n->y == findAdjacent(rLeft)->y) {
-        turnLeft();
-        moveForward();
-    } else {
-        printf("\nERROR\n");
-    }
-
-}
-
 int main() { // Trémaux's Algorithm
     initialiseNode();
     simulator_startNewSmokeTrail();
@@ -588,26 +611,26 @@ int main() { // Trémaux's Algorithm
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
-        if (!atJunction()) {
+        if (currentNode == nodes[0][0] &&marchingState == backward ) {
+            printf("Traversed the maze\n");
+            break;
+        }
+        if ((marchingState == forward && !atJunction()) || (marchingState == backward && currentNode->junction == 0)) {
             printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
             if (leftClear() + rightClear() + frontClear() > 0) { // not dead end
                 moveAlongPath();
-//              printf("Current node is (%d,%d)\n", currentNode->x, currentNode->y);
             } else {
-                if (currentNode == nodes[0][0]) {
-                    printf("Traversed the maze\n");
-                    break;
-                }
-                printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
+                printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("3. Marching forward into a dead end.\n");
-                turnAround();
+                //turnAround();
                 marchingState = backward;
-                moveForward();
+                moveBackward();
             }
             //printMatrix();
             continue;
         }
         // At junction:
+        currentNode->junction = 1;
         if (marchingState == forward) {
             if (!atOldJunction()) {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
@@ -620,16 +643,16 @@ int main() { // Trémaux's Algorithm
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("2. Marching forward into an old junction:\n");
                 findAdjacent(back)->tag = N;
-                turnAround();
+                //turnAround();
                 marchingState = backward;
-                moveForward();
+                moveBackward();
             }
         } else {
             // marching backward -- has to be old junction
             if (hasEmptyAdjNode()) {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("4. Marching backward into a junction with some unlabeled passages\n");
-                findAdjacent(back)->tag = N;
+                findAdjacent(front)->tag = N;
                 marchingState = forward;
                 goToNodeWithTag(Empty);
                 currentNode->tag = N;
@@ -646,7 +669,6 @@ int main() { // Trémaux's Algorithm
     p = findPath();
 
     currentNode = nodes[0][0];
-    turnAround();
     printf("\n**********HEADING BACK**********\n");
     int i = 1;
     while (i < p->counter) {
