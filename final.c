@@ -116,7 +116,7 @@ void turnRight() {
 //        turnLog += 1;
 //    }
     turnLog += 1;
-    drive_goto(26, -25);
+    drive_goto(25, -26);
     switch (currentDir) {
         case up:
             currentDir = right;
@@ -565,38 +565,6 @@ void goToEmpty() { // bot should move forward into empty node
     }
 }
 
-//void goToNodeWithTag(enum label tag) {
-//    if (marchingState == forward) {
-//        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
-//            turnLeft();
-//            moveForward();
-//            return;
-//        }
-//        if (frontClear() && findAdjacent(front)->tag == tag) {
-//            moveForward();
-//            return;
-//        }
-//        if (rightClear() && findAdjacent(rRight)->tag == tag) {
-//            turnRight();
-//            moveForward();
-//        }
-//    } else {
-//        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
-//            turnRight();
-//            moveBackward();
-//            return;
-//        }
-//        if (rightClear() && findAdjacent(rRight)->tag == tag) {
-//            turnLeft();
-//            moveBackward();
-//            return;
-//        }
-//        // checked left and right, must be back
-//        turnAround();
-//        moveForward();
-//    }
-//}
-
 int hasEmptyAdjNode() { // will only be used when marching back
     if ((leftClear() && findAdjacentTag(rLeft) == Empty) || (frontClear() && findAdjacentTag(front) == Empty) ||
         (rightClear() && findAdjacentTag(rRight) == Empty)) {
@@ -794,7 +762,7 @@ void turnToAbsolute(enum absoluteDir dir) {
                 case down:
                     break;
                 case left:
-                    turnRight();
+                    turnLeft();
             }
             break;
         case left:
