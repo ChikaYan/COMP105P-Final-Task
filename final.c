@@ -43,7 +43,11 @@ struct node {
     int x;
     int y;
     int junction;
-    enum label tag;
+    enum label upTag;
+    enum label rightTag;
+    enum label leftTag;
+    enum label downTag;
+    //enum label tag;
 };
 
 struct queueMember {
@@ -63,7 +67,7 @@ struct node *currentNode = NULL;
 struct node *nodes[4][5];
 
 int matrix[4][5][4][5];
-struct queueMember *queue[40];
+struct queueMember *queue[100];
 int qFront = 1, qRear = 0;
 int visited[4][5];
 struct queueMember *paths[20];
@@ -102,16 +106,17 @@ int rightClear() {
 }
 
 void turnRight() {
-    if (turnLog > 0) {
-        // turn left first then turn around
-        drive_goto(-25, 26); // TODO: try 25 -26
-        drive_goto(51, -52);
-        turnLog -= 1;
-    } else {
-        drive_goto(26, -25);
-        turnLog += 1;
-    }
-
+//    if (turnLog > 0) {
+//        // turn left first then turn around
+//        drive_goto(-25, 26); // TODO: try 25 -26
+//        drive_goto(51, -52);
+//        turnLog -= 1;
+//    } else {
+//        drive_goto(26, -25);
+//        turnLog += 1;
+//    }
+    turnLog += 1;
+    drive_goto(26, -25);
     switch (currentDir) {
         case up:
             currentDir = right;
@@ -125,21 +130,22 @@ void turnRight() {
         case left:
             currentDir = up;
     }
-    if (marchingState == backward){
+    if (marchingState == backward) {
         frontClear();
     }
 }
 
 void turnLeft() {
-    if (turnLog < 0) {
-        drive_goto(26, -25);
-        drive_goto(51, -52);
-        turnLog += 1;
-    } else {
-        drive_goto(-25, 26);
-        turnLog -= 1;
-    }
-
+//    if (turnLog < 0) {
+//        drive_goto(26, -25);
+//        drive_goto(51, -52);
+//        turnLog += 1;
+//    } else {
+//        drive_goto(-25, 26);
+//        turnLog -= 1;
+//    }
+    turnLog -= 1;
+    drive_goto(-25, 26);
     switch (currentDir) {
         case up:
             currentDir = left;
@@ -153,7 +159,7 @@ void turnLeft() {
         case left:
             currentDir = down;
     }
-    if (marchingState == backward){
+    if (marchingState == backward) {
         frontClear();
     }
 }
@@ -257,7 +263,10 @@ void initialiseNode() {
             nodes[x][y] = malloc(sizeof(struct node));
             nodes[x][y]->x = x;
             nodes[x][y]->y = y;
-            nodes[x][y]->tag = Empty;
+            nodes[x][y]->upTag = Empty;
+            nodes[x][y]->rightTag = Empty;
+            nodes[x][y]->leftTag = Empty;
+            nodes[x][y]->downTag = Empty;
             nodes[x][y]->junction = 0;
             visited[4][5] = 0;
         }
@@ -355,49 +364,250 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
     }
 }
 
-void goToNodeWithTag(enum label tag) {
-    if (marchingState == forward) {
-        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
-            turnLeft();
-            moveForward();
-            return;
-        }
-        if (frontClear() && findAdjacent(front)->tag == tag) {
-            moveForward();
-            return;
-        }
-        if (rightClear() && findAdjacent(rRight)->tag == tag) {
-            turnRight();
-            moveForward();
-        }
-    } else {
-        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
-            turnRight();
-            moveBackward();
-            return;
-        }
-        if (rightClear() && findAdjacent(rRight)->tag == tag) {
-            turnLeft();
-            moveBackward();
-            return;
-        }
-        // checked left and right, must be back
-        moveBackward();
+enum label findAdjacentTag(enum relativeDir targetDirection) {
+    switch (targetDirection) {
+        case front:
+            switch (currentDir) {
+                case up:
+                    return currentNode->upTag;
+                case right:
+                    return currentNode->rightTag;
+                case down:
+                    return currentNode->downTag;
+                case left:
+                    return currentNode->leftTag;
+            }
+        case rRight:
+            switch (currentDir) {
+                case up:
+                    return currentNode->rightTag;
+                case right:
+                    return currentNode->downTag;
+                case down:
+                    return currentNode->leftTag;
+                case left:
+                    return currentNode->upTag;
+            }
+        case back:
+            switch (currentDir) {
+                case up:
+                    return currentNode->downTag;
+                case right:
+                    return currentNode->leftTag;
+                case down:
+                    return currentNode->upTag;
+                case left:
+                    return currentNode->rightTag;
+            }
+        case rLeft:
+            switch (currentDir) {
+                case up:
+                    return currentNode->leftTag;
+                case right:
+                    return currentNode->upTag;
+                case down:
+                    return currentNode->rightTag;
+                case left:
+                    return currentNode->downTag;
+            }
     }
-
 }
 
-int hasEmptyAdjNode() {
-    if ((leftClear() && findAdjacent(rLeft)->tag == Empty) || (frontClear() && findAdjacent(front)->tag == Empty) ||
-        (rightClear() && findAdjacent(rRight)->tag == Empty)) {
+void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {
+    switch (targetDirection) {
+        case front:
+            switch (currentDir) {
+                case up:
+                    currentNode->upTag = newTag;
+                    return;
+                case right:
+                    currentNode->rightTag = newTag;
+                    return;
+                case down:
+                    currentNode->downTag = newTag;
+                    return;
+                case left:
+                    currentNode->leftTag = newTag;
+                    return;
+            }
+        case rRight:
+            switch (currentDir) {
+                case up:
+                    currentNode->rightTag = newTag;
+                    return;
+                case right:
+                    currentNode->downTag = newTag;
+                    return;
+                case down:
+                    currentNode->leftTag = newTag;
+                    return;
+                case left:
+                    currentNode->upTag = newTag;
+                    return;
+            }
+        case back:
+            switch (currentDir) {
+                case up:
+                    currentNode->downTag = newTag;
+                    return;
+                case right:
+                    currentNode->leftTag = newTag;
+                    return;
+                case down:
+                    currentNode->upTag = newTag;
+                    return;
+                case left:
+                    currentNode->rightTag = newTag;
+                    return;
+            }
+        case rLeft:
+            switch (currentDir) {
+                case up:
+                    currentNode->leftTag = newTag;
+                    return;
+                case right:
+                    currentNode->upTag = newTag;
+                    return;
+                case down:
+                    currentNode->rightTag = newTag;
+                    return;
+                case left:
+                    currentNode->downTag = newTag;
+                    return;
+            }
+    }
+}
+
+void printTags(){
+    printf("Node (%d,%d)\n",currentNode->x,currentNode->y);
+    printf("upTag: ");
+    switch (currentNode->upTag){
+        case X:
+            printf("X\n");
+            break;
+        case N:
+            printf("N\n");
+            break;
+        case Empty:
+            printf("Empty\n");
+            break;
+    }
+    printf("leftTag: ");
+    switch (currentNode->leftTag){
+        case X:
+            printf("X\n");
+            break;
+        case N:
+            printf("N\n");
+            break;
+        case Empty:
+            printf("Empty\n");
+            break;
+    }
+    printf("rightTag: ");
+    switch (currentNode->rightTag){
+        case X:
+            printf("X\n");
+            break;
+        case N:
+            printf("N\n");
+            break;
+        case Empty:
+            printf("Empty\n");
+            break;
+    }
+    printf("downTag: ");
+    switch (currentNode->downTag){
+        case X:
+            printf("X\n");
+            break;
+        case N:
+            printf("N\n");
+            break;
+        case Empty:
+            printf("Empty\n");
+            break;
+    }
+}
+
+void faceExitWithBack() {
+    printTags();
+    if (leftClear() && findAdjacentTag(rLeft) == X) {
+        turnRight();
+        return;
+    }
+    if (rightClear() && findAdjacentTag(rRight) == X) {
+        turnLeft();
+        return;
+    }
+    if (frontClear() && findAdjacentTag(front) == X) {
+        turnAround();
+        printf("faceExitWithBack function does something usual\n");
+    }
+}
+
+void goToEmpty() { // bot should move forward into empty node
+    if (leftClear() && findAdjacentTag(rLeft) == Empty) {
+        turnLeft();
+        updateAdjacentTag(front, N);
+        moveForward();
+        return;
+    }
+    if (frontClear() && findAdjacentTag(front) == Empty) {
+        updateAdjacentTag(front, N);
+        moveForward();
+        return;
+    }
+    if (rightClear() && findAdjacentTag(rRight) == Empty) {
+        turnRight();
+        updateAdjacentTag(front, N);
+        moveForward();
+    }
+}
+
+//void goToNodeWithTag(enum label tag) {
+//    if (marchingState == forward) {
+//        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
+//            turnLeft();
+//            moveForward();
+//            return;
+//        }
+//        if (frontClear() && findAdjacent(front)->tag == tag) {
+//            moveForward();
+//            return;
+//        }
+//        if (rightClear() && findAdjacent(rRight)->tag == tag) {
+//            turnRight();
+//            moveForward();
+//        }
+//    } else {
+//        if (leftClear() && findAdjacent(rLeft)->tag == tag) {
+//            turnRight();
+//            moveBackward();
+//            return;
+//        }
+//        if (rightClear() && findAdjacent(rRight)->tag == tag) {
+//            turnLeft();
+//            moveBackward();
+//            return;
+//        }
+//        // checked left and right, must be back
+//        turnAround();
+//        moveForward();
+//    }
+//}
+
+int hasEmptyAdjNode() { // will only be used when marching back
+    if ((leftClear() && findAdjacentTag(rLeft) == Empty) || (frontClear() && findAdjacentTag(front) == Empty) ||
+        (rightClear() && findAdjacentTag(rRight) == Empty)) {
         return 1;
     }
     return 0;
 }
 
 int atOldJunction() {
-    if ((leftClear() && findAdjacent(rLeft)->tag != Empty) || (frontClear() && findAdjacent(front)->tag != Empty) ||
-        (rightClear() && findAdjacent(rRight)->tag != Empty)) {
+    if ((leftClear() && findAdjacentTag(rLeft) != Empty) || (frontClear() && findAdjacentTag(front) != Empty) ||
+        (rightClear() && findAdjacentTag(rRight) != Empty)) {
         return 1;
     }
     return 0;
@@ -527,7 +737,7 @@ struct queueMember *findBestPath() {
 }
 
 struct queueMember *findPath() {
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 100; i++) {
         queue[i] = malloc(sizeof(struct queueMember));
         queue[i]->counter = 0;
         queue[i]->n = malloc(sizeof(struct node));
@@ -611,12 +821,12 @@ int main() { // Trémaux's Algorithm
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
-        if (currentNode == nodes[0][0] &&marchingState == backward ) {
+        if (currentNode == nodes[0][0] && marchingState == backward) {
             printf("Traversed the maze\n");
             break;
         }
         if ((marchingState == forward && !atJunction()) || (marchingState == backward && currentNode->junction == 0)) {
-            printf("At node (%d,%d): \n", currentNode->x, currentNode->y);
+            printf("At node (%d,%d).\n", currentNode->x, currentNode->y);
             if (leftClear() + rightClear() + frontClear() > 0) { // not dead end
                 moveAlongPath();
             } else {
@@ -635,31 +845,30 @@ int main() { // Trémaux's Algorithm
             if (!atOldJunction()) {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("1. Marching forward into a new junction:\n");
-                findAdjacent(back)->tag = X;
-//               printf("find Adjacent(back) pass\n");
-                goToNodeWithTag(Empty);
-//                printf("goToNodeWithTag(Empty) pass\n");
+                updateAdjacentTag(back, X);
+                goToEmpty();
+//                currentNode->tag = N; //???
             } else if (atOldJunction()) {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("2. Marching forward into an old junction:\n");
-                findAdjacent(back)->tag = N;
-                //turnAround();
+
+                updateAdjacentTag(back, N);// findAdjacent(back)->tag = N;
                 marchingState = backward;
                 moveBackward();
             }
         } else {
             // marching backward -- has to be old junction
+            // always face exit with back when marching back to old junction
+            faceExitWithBack();
             if (hasEmptyAdjNode()) {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("4. Marching backward into a junction with some unlabeled passages\n");
-                findAdjacent(front)->tag = N;
+                goToEmpty();
                 marchingState = forward;
-                goToNodeWithTag(Empty);
-                currentNode->tag = N;
             } else {
                 printf("At node (%d,%d): ", currentNode->x, currentNode->y);
                 printf("5. Marching backward into a junction with no unlabeled passages\n");
-                goToNodeWithTag(X);
+                moveBackward();
             }
         }
     }
