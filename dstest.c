@@ -13,19 +13,29 @@
 #include "simulator.h"
 
 int main() {
+    drive_setRampStep(2000);
+    simulator_startNewSmokeTrail();
     int left, right;
     int preL, preR;
-    drive_speed(128, 128);
-    pause(1100);
+    drive_ramp(128, 128);
+    pause(1150);
     drive_getTicks(&left, &right);
     printf("Travelled for (%d,%d)\n", left - preL, right - preR);
 
     drive_getTicks(&preL, &preR);
-    drive_speed(128, 50);
+    drive_ramp(128, 0);
     pause(650);
     drive_getTicks(&left, &right);
     printf("Travelled for (%d,%d)\n", left - preL, right - preR);
+    drive_ramp(128, 128);
+    pause(200);
 
-    drive_speed(128, 128);
+    drive_getTicks(&preL, &preR);
+    drive_ramp(0, 128);
+    pause(730);
+    drive_getTicks(&left, &right);
+    printf("Travelled for (%d,%d)\n", left - preL, right - preR);
+
+    drive_ramp(128, 128);
     while (1);
 }
