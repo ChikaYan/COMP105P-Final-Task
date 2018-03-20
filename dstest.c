@@ -39,7 +39,7 @@ void turnRightAfterRightTurn() {
     drive_ramp(128, 128);
     pause(100);
     drive_ramp(128, 64);
-    pause(630);
+    pause(628);
     drive_ramp(128, 128);
     pause(170);
     drive_getTicks(&left, &right);
@@ -83,6 +83,22 @@ void moveForwardAfterForwarding(){ // tested: after moveForward
     printf("moveForwardAfterForwarding: Travelled for (%d,%d)\n", left - preL, right - preR);
 }
 
+void moveForwardAfter90Turn(){
+    drive_getTicks(&preL, &preR);
+    drive_ramp(128, 128);
+    pause(900);
+    drive_getTicks(&left, &right);
+    printf("moveForwardAfter90Turn: Travelled for (%d,%d)\n", left - preL, right - preR);
+}
+
+void moveForwardAfter180Turn(){
+    drive_getTicks(&preL, &preR);
+    drive_ramp(128, 128);
+    pause(1025);
+    drive_getTicks(&left, &right);
+    printf("moveForwardAfter180Turn: Travelled for (%d,%d)\n", left - preL, right - preR);
+}
+
 void initMove() {
     drive_ramp(128, 128);
     pause(1150);
@@ -95,14 +111,16 @@ int main() {
     simulator_startNewSmokeTrail();
 
     initMove();
-    moveForward();
-    turnRight();
-    moveForward();
+    turnRightAfterInit();
+    moveForwardAfter90Turn();
+    moveForwardAfterForwarding();
     turnLeft();
-    turnRight();
-    turnRightAfterRightTurn();
-    moveForward();
-    turnRight();
+//    turnLeftAfterLeftTurn();
+//    turnRight();
+//    turnRightAfterRightTurn();
+//    turnLeft();
+//    moveForwardAfter90Turn();
+
 
 
 
