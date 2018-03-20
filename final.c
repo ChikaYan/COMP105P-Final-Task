@@ -75,15 +75,16 @@ int pathCounter = 0;
 
 int frontClear() {
     int fd = ping_cm(8);
-    printf("Front distance is: %d\n", fd);
+    //printf("Front distance is: %d\n", fd);
     if (fd >= FRONT_THRESHOLD) {
         return 1;
     }
-    int botReposition = (18 - fd);
-    if (botReposition > 0 || botReposition < 0) { // TODO: find out if its too accurate?
-        botReposition /= 0.325;
-        drive_goto(-botReposition, -botReposition);
-    }
+
+//    int botReposition = (18 - fd);
+//    if (botReposition > 0 || botReposition < 0) { // TODO: find out if its too accurate?
+//        botReposition /= 0.325;
+//        drive_goto(-botReposition, -botReposition);
+//    }
     return 0;
 }
 
