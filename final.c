@@ -10,7 +10,7 @@
 #include "simulator.h"
 
 const int SQUARE_LENGTH = 123; // in ticks (40cm?)
-const int LR_THRESHOLD = 78  ; // in LRdis()
+const int LR_THRESHOLD = 79; // in LRdis()
 const int FRONT_THRESHOLD = 30; // in cm
 
 
@@ -87,9 +87,8 @@ int frontClear() {
     if (fd >= FRONT_THRESHOLD) {
         return 1;
     }
-
 //    int botReposition = (18 - fd);
-//    if (botReposition > 0 || botReposition < 0) { // TODO: need to be enabled
+//    if (botReposition > 0 || botReposition < 0) { // TODO: need to be enabled?
 //        botReposition /= 0.325;
 //        drive_goto(-botReposition, -botReposition);
 //    }
@@ -117,15 +116,25 @@ int rightClear() {
 void turnRight() {
 //    if (turnLog > 0) {
 //        // turn left first then turn around
-//        drive_goto(-25, 26); // TODO: try 25 -26
+//        drive_goto(-25, 26);
 //        drive_goto(51, -52);
 //        turnLog -= 1;
 //    } else {
 //        drive_goto(26, -25);
 //        turnLog += 1;
 //    }
+    if (turnLog > 0 && turnLog % 2 == 1) { // right turn number is larger than 0 and is odd -- need to overturn
+        drive_goto(26, -26);
+        printf("Right overturning\n");
+    } else if (turnLog < 0 &&
+               turnLog % 2 == 0) { // left turn number is larger than 0 and is even -- need to reset overturn
+        drive_goto(26, -26);
+        printf("Right overturning\n");
+    } else {
+        drive_goto(25, -26);
+    }
     turnLog += 1;
-    drive_goto(25, -26);
+
     switch (currentDir) {
         case up:
             currentDir = right;
@@ -153,8 +162,17 @@ void turnLeft() {
 //        drive_goto(-25, 26);
 //        turnLog -= 1;
 //    }
+    if (turnLog < 0 && turnLog % 2 == -1) { // left turn number is larger than 0 and is odd -- need to overturn
+        drive_goto(-26, 26);
+        printf("Left overturning\n");
+    } else if (turnLog > 0 && turnLog % 2 == 0) { // has turned more than one right turns -- need to reset overturn
+        drive_goto(-26, 26);
+        printf("Left overturning\n");
+    } else {
+        drive_goto(-25, 26);
+    }
     turnLog -= 1;
-    drive_goto(-25, 26);
+
     switch (currentDir) {
         case up:
             currentDir = left;
@@ -173,7 +191,7 @@ void turnLeft() {
 //    }
 }
 
-void turnAround() {
+void turnAround() { // shouldn't be used
     if (turnLog > 0) {
         turnLeft();
         turnLeft();
@@ -268,7 +286,7 @@ void dsTurnLeftAfterLeftTurn() {
     drive_ramp(128, 128);
     pause(100);
     drive_ramp(64, 128);
-    pause(630);
+    pause(628);
     drive_ramp(128, 128);
     pause(170);
 }
@@ -973,7 +991,7 @@ void dsRacing() {
         }
         printf("At node (%d,%d)\nFollowing nodes are: (%d,%d)(%d,%d)\n", currentNode->x, currentNode->y, p->path[i]->x,
                p->path[i]->y, p->path[i + 1]->x, p->path[i + 1]->y);
-        printf("current i is: %d, counter is: %d\n", i, p->counter);
+//        printf("current i is: %d, counter is: %d\n", i, p->counter);
         if (hasAdjacent(front) &&
             findAdjacent(front) != p->path[i]) { // next node is not in the front -- something went wrong
             printf("dsRacing ERROR\n");
@@ -984,44 +1002,51 @@ void dsRacing() {
 //        printf("path[i] is (%d,%d)\n", p->path[i]->x, p->path[i]->y);
 
         if (hasAdjacent(front) && findAdjacent(front) == p->path[i]) { // move front
-            printf("Moving forward\n");
             switch (lastMove) {
                 case init:
                     dsMoveForward();
+                    printf("dsMoveForward\n");
                     break;
                 case rightTurn:
                     dsMoveForwardAfter90Turn();
+                    printf("dsMoveForwardAfter90Turn\n");
                     break;
                 case leftTurn:
                     dsMoveForwardAfter90Turn();
+                    printf("dsMoveForwardAfter90Turn\n");
                     break;
                 case turn180:
                     dsMoveForwardAfter180Turn();
+                    printf("dsMoveForwardAfter180Turn\n");
                     break;
                 case forwarding:
                     dsMoveForwardAfterForwarding();
+                    printf("dsMoveForwardAfterForwarding\n");
             }
             lastMove = forwarding;
         } else if (hasAdjacent(rLeft) && findAdjacent(rLeft) == p->path[i]) { // turn left
-            printf("Turning left\n");
             switch (lastMove) {
                 case init: // not possible
                     break;
                 case rightTurn:
                     dsTurnLeft();
                     lastMove = leftTurn;
+                    printf("dsTurnLeft\n");
                     break;
                 case leftTurn:
                     dsTurnLeftAfterLeftTurn();
                     lastMove = turn180;
+                    printf("dsTurnLeftAfterLeftTurn\n");
                     break;
                 case turn180:
                     dsTurnLeft();
                     lastMove = leftTurn;
+                    printf("dsTurnLeft\n");
                     break;
                 case forwarding:
                     dsTurnLeft();
                     lastMove = leftTurn;
+                    printf("dsTurnLeft\n");
             }
             switch (currentDir) {
                 case up:
@@ -1037,27 +1062,31 @@ void dsRacing() {
                     currentDir = down;
             }
         } else if (hasAdjacent(rRight) && findAdjacent(rRight) == p->path[i]) { // turn right
-            printf("Turning right\n");
             switch (lastMove) {
                 case init:
                     dsTurnRightAfterInit();
                     lastMove = rightTurn;
+                    printf("dsTurnRightAfterInit\n");
                     break;
                 case rightTurn:
                     dsTurnRightAfterRightTurn();
                     lastMove = turn180;
+                    printf("dsTurnRightAfterRightTurn\n");
                     break;
                 case leftTurn:
                     dsTurnRight();
                     lastMove = rightTurn;
+                    printf("dsTurnRight\n");
                     break;
                 case turn180:
                     dsTurnRight();
                     lastMove = rightTurn;
+                    printf("dsTurnRight\n");
                     break;
                 case forwarding:
                     dsTurnRight();
                     lastMove = rightTurn;
+                    printf("dsTurnRight\n");
             }
             switch (currentDir) { // change current dirction
                 case up:

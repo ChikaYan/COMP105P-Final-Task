@@ -60,7 +60,7 @@ void turnLeftAfterLeftTurn() {
     drive_ramp(128, 128);
     pause(100);
     drive_ramp(64, 128);
-    pause(630);
+    pause(628);
     drive_ramp(128, 128);
     pause(170);
     drive_getTicks(&left, &right);
@@ -111,17 +111,19 @@ int main() {
     simulator_startNewSmokeTrail();
 
     initMove();
-    turnRightAfterInit();
-    moveForwardAfter90Turn();
-    moveForwardAfterForwarding();
-    turnLeft();
+    moveForward();
+//    turnLeft();
 //    turnLeftAfterLeftTurn();
 //    turnRight();
-//    turnRightAfterRightTurn();
-//    turnLeft();
-//    moveForwardAfter90Turn();
-
-
+    turnRight();
+    turnRightAfterRightTurn();
+    turnLeft();
+    moveForwardAfter90Turn();
+    turnLeft();
+    moveForwardAfter90Turn();
+    turnLeft();
+    turnRight();
+    turnRightAfterRightTurn();
 
 
     drive_ramp(128, 128);
