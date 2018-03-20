@@ -39,6 +39,14 @@ enum label {
     Empty,
 };
 
+enum moveType {
+    init,
+    rightTurn,
+    leftTurn,
+    turn180,
+    forwarding
+};
+
 struct node {
     int x;
     int y;
@@ -81,7 +89,7 @@ int frontClear() {
     }
 
 //    int botReposition = (18 - fd);
-//    if (botReposition > 0 || botReposition < 0) { // TODO: find out if its too accurate?
+//    if (botReposition > 0 || botReposition < 0) { // TODO: need to be enabled
 //        botReposition /= 0.325;
 //        drive_goto(-botReposition, -botReposition);
 //    }
@@ -90,7 +98,7 @@ int frontClear() {
 
 int leftClear() {
     float ld = leftDis();
-//    printf("Left distance is: %f\n", ld);
+    printf("Left distance is: %f\n", ld);
     if (ld >= LR_THRESHOLD) {
         return 1;
     }
@@ -99,7 +107,7 @@ int leftClear() {
 
 int rightClear() {
     float right_dis = rightDis();
-//    printf("Right distance is: %f\n", right_dis);
+    printf("Right distance is: %f\n", right_dis);
     if (right_dis >= LR_THRESHOLD) {
         return 1;
     }
@@ -131,9 +139,9 @@ void turnRight() {
         case left:
             currentDir = up;
     }
-    if (marchingState == backward) {
-        frontClear();
-    }
+//    if (marchingState == backward) {
+//        frontClear();
+//    }
 }
 
 void turnLeft() {
@@ -160,9 +168,9 @@ void turnLeft() {
         case left:
             currentDir = down;
     }
-    if (marchingState == backward) {
-        frontClear();
-    }
+//    if (marchingState == backward) {
+//        frontClear();
+//    }
 }
 
 void turnAround() {
@@ -224,6 +232,71 @@ void moveBackward() {
             currentNode = nodes[currentNode->x + 1][currentNode->y];
     }
     addEdge(findAdjacent(front), currentNode);
+}
+
+void dsTurnRightAfterInit() {
+    drive_ramp(128, 64);
+    pause(710);
+    drive_ramp(128, 128);
+    pause(170);
+}
+
+void dsTurnRight() { // tested: after forwarding, after turning left
+    drive_ramp(128, 64);
+    pause(785);
+    drive_ramp(128, 128);
+    pause(170);
+}
+
+void dsTurnRightAfterRightTurn() {
+    drive_ramp(128, 128);
+    pause(100);
+    drive_ramp(128, 64);
+    pause(628);
+    drive_ramp(128, 128);
+    pause(170);
+}
+
+void dsTurnLeft() { // tested: after forwarding, after turning right, after turning init right
+    drive_ramp(64, 128);
+    pause(785);
+    drive_ramp(128, 128);
+    pause(170);
+}
+
+void dsTurnLeftAfterLeftTurn() {
+    drive_ramp(128, 128);
+    pause(100);
+    drive_ramp(64, 128);
+    pause(630);
+    drive_ramp(128, 128);
+    pause(170);
+}
+
+void
+dsMoveForward() { // should go less than 122 ticks in order to turn. Should be followed by moveForwardAfterForwarding or turning
+    drive_ramp(128, 128);
+    pause(825);
+}
+
+void dsMoveForwardAfterForwarding() { // tested: after moveForward
+    drive_ramp(128, 128);
+    pause(940);
+}
+
+void dsMoveForwardAfter90Turn() {
+    drive_ramp(128, 128);
+    pause(900);
+}
+
+void dsMoveForwardAfter180Turn() {
+    drive_ramp(128, 128);
+    pause(1025);
+}
+
+void dsInitMove() {
+    drive_ramp(128, 128);
+    pause(1150);
 }
 
 int atJunction() {
@@ -365,6 +438,55 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
     }
 }
 
+int hasAdjacent(enum relativeDir targetDirection) {
+    switch (targetDirection) {
+        case front:
+            switch (currentDir) {
+                case up:
+                    return currentNode->y + 1 <= 4;
+                case right:
+                    return currentNode->x + 1 <= 3;
+                case down:
+                    return currentNode->y - 1 >= 0;
+                case left:
+                    return currentNode->x - 1 >= 0;
+            }
+        case rRight:
+            switch (currentDir) {
+                case up:
+                    return currentNode->x + 1 <= 3;
+                case right:
+                    return currentNode->y - 1 >= 0;
+                case down:
+                    return currentNode->x - 1 >= 0;
+                case left:
+                    return currentNode->y + 1 <= 4;
+            }
+        case back:
+            switch (currentDir) {
+                case up:
+                    return currentNode->y - 1 >= 0;
+                case right:
+                    return currentNode->x - 1 >= 0;
+                case down:
+                    return currentNode->y + 1 <= 4;
+                case left:
+                    return currentNode->x + 1 <= 3;
+            }
+        case rLeft:
+            switch (currentDir) {
+                case up:
+                    return currentNode->x - 1 >= 0;
+                case right:
+                    return currentNode->y + 1 <= 4;
+                case down:
+                    return currentNode->x + 1 <= 3;
+                case left:
+                    return currentNode->y - 1 >= 0;
+            }
+    }
+}
+
 enum label findAdjacentTag(enum relativeDir targetDirection) {
     switch (targetDirection) {
         case front:
@@ -479,10 +601,10 @@ void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {
     }
 }
 
-void printTags(){
-    printf("Node (%d,%d)\n",currentNode->x,currentNode->y);
+void printTags() {
+    printf("Node (%d,%d)\n", currentNode->x, currentNode->y);
     printf("upTag: ");
-    switch (currentNode->upTag){
+    switch (currentNode->upTag) {
         case X:
             printf("X\n");
             break;
@@ -494,7 +616,7 @@ void printTags(){
             break;
     }
     printf("leftTag: ");
-    switch (currentNode->leftTag){
+    switch (currentNode->leftTag) {
         case X:
             printf("X\n");
             break;
@@ -506,7 +628,7 @@ void printTags(){
             break;
     }
     printf("rightTag: ");
-    switch (currentNode->rightTag){
+    switch (currentNode->rightTag) {
         case X:
             printf("X\n");
             break;
@@ -518,7 +640,7 @@ void printTags(){
             break;
     }
     printf("downTag: ");
-    switch (currentNode->downTag){
+    switch (currentNode->downTag) {
         case X:
             printf("X\n");
             break;
@@ -781,6 +903,179 @@ void turnToAbsolute(enum absoluteDir dir) {
     }
 }
 
+void dgRacing() {
+    struct queueMember *p = malloc(sizeof(struct queueMember));
+    p = findPath();
+    currentNode = nodes[0][0];
+    printf("\n**********DRIVE_GOTO HEADING BACK**********\n");
+    int i = 1;
+    while (i < p->counter) {
+        int changeX = p->path[i]->x - currentNode->x;
+        int changeY = p->path[i]->y - currentNode->y;
+        int step = 1;
+        if (changeX != 0 && changeY != 0) {
+            printf("\nERROR: changX and changY both != 0\n");
+        }
+        if (i + 1 < p->counter) {
+            while (changeX != 0 && changeY == 0 && p->path[i + 1]->x - p->path[i]->x == changeX) {
+                step++;
+                i++;
+                printf("Move in x direction for step %d\n", step);
+                if (i + 1 >= p->counter) {
+                    break;
+                }
+            }
+            while (changeY != 0 && changeX == 0 && p->path[i + 1]->y - p->path[i]->y == changeY) {
+                step++;
+                i++;
+                printf("Move in y direction for step %d\n", step);
+                if (i + 1 >= p->counter) {
+                    break;
+                }
+            }
+        }
+        if (changeX > 0) {
+            printf("Facing right\n");
+            turnToAbsolute(right);
+        } else if (changeX < 0) {
+            printf("Facing left\n");
+            turnToAbsolute(left);
+        } else if (changeY > 0) {
+            printf("Facing up\n");
+            turnToAbsolute(up);
+        } else if (changeY < 0) {
+            printf("Facing down\n");
+            turnToAbsolute(down);
+        }
+        printf("Moving forward for step: %d\n", step);
+        drive_goto(SQUARE_LENGTH * step, SQUARE_LENGTH * step);
+        currentNode = p->path[i];
+        printf("At node (%d,%d)\n", currentNode->x, currentNode->y);
+        i++;
+    }
+}
+
+void dsRacing() {
+    drive_setRampStep(2000);
+    struct queueMember *p = malloc(sizeof(struct queueMember));
+    p = findPath();
+    currentNode = nodes[0][0];
+    drive_goto(-30, -30);
+    printf("\n**********DRIVE_SPEED HEADING BACK**********\n");
+    enum moveType lastMove = init;
+    dsInitMove(); // first move is always going up
+    int i = 1;
+    while (i < p->counter) {
+        if (i >= p->counter - 1) { //reached the end
+            printf("Reaching the end\n");
+            moveForward();
+            return;
+        }
+        printf("At node (%d,%d)\nFollowing nodes are: (%d,%d)(%d,%d)\n", currentNode->x, currentNode->y, p->path[i]->x,
+               p->path[i]->y, p->path[i + 1]->x, p->path[i + 1]->y);
+        printf("current i is: %d, counter is: %d\n", i, p->counter);
+        if (hasAdjacent(front) &&
+            findAdjacent(front) != p->path[i]) { // next node is not in the front -- something went wrong
+            printf("dsRacing ERROR\n");
+        }
+        currentNode = p->path[i];
+        i++;
+//        printf("Printing path[i]\n");
+//        printf("path[i] is (%d,%d)\n", p->path[i]->x, p->path[i]->y);
+
+        if (hasAdjacent(front) && findAdjacent(front) == p->path[i]) { // move front
+            printf("Moving forward\n");
+            switch (lastMove) {
+                case init:
+                    dsMoveForward();
+                    break;
+                case rightTurn:
+                    dsMoveForwardAfter90Turn();
+                    break;
+                case leftTurn:
+                    dsMoveForwardAfter90Turn();
+                    break;
+                case turn180:
+                    dsMoveForwardAfter180Turn();
+                    break;
+                case forwarding:
+                    dsMoveForwardAfterForwarding();
+            }
+            lastMove = forwarding;
+        } else if (hasAdjacent(rLeft) && findAdjacent(rLeft) == p->path[i]) { // turn left
+            printf("Turning left\n");
+            switch (lastMove) {
+                case init: // not possible
+                    break;
+                case rightTurn:
+                    dsTurnLeft();
+                    lastMove = leftTurn;
+                    break;
+                case leftTurn:
+                    dsTurnLeftAfterLeftTurn();
+                    lastMove = turn180;
+                    break;
+                case turn180:
+                    dsTurnLeft();
+                    lastMove = leftTurn;
+                    break;
+                case forwarding:
+                    dsTurnLeft();
+                    lastMove = leftTurn;
+            }
+            switch (currentDir) {
+                case up:
+                    currentDir = left;
+                    break;
+                case right:
+                    currentDir = up;
+                    break;
+                case down:
+                    currentDir = right;
+                    break;
+                case left:
+                    currentDir = down;
+            }
+        } else if (hasAdjacent(rRight) && findAdjacent(rRight) == p->path[i]) { // turn right
+            printf("Turning right\n");
+            switch (lastMove) {
+                case init:
+                    dsTurnRightAfterInit();
+                    lastMove = rightTurn;
+                    break;
+                case rightTurn:
+                    dsTurnRightAfterRightTurn();
+                    lastMove = turn180;
+                    break;
+                case leftTurn:
+                    dsTurnRight();
+                    lastMove = rightTurn;
+                    break;
+                case turn180:
+                    dsTurnRight();
+                    lastMove = rightTurn;
+                    break;
+                case forwarding:
+                    dsTurnRight();
+                    lastMove = rightTurn;
+            }
+            switch (currentDir) { // change current dirction
+                case up:
+                    currentDir = right;
+                    break;
+                case right:
+                    currentDir = down;
+                    break;
+                case down:
+                    currentDir = left;
+                    break;
+                case left:
+                    currentDir = up;
+            }
+        }
+
+    }
+}
 
 int main() { // Trémaux's Algorithm
     initialiseNode();
@@ -843,55 +1138,6 @@ int main() { // Trémaux's Algorithm
     }
 
     printMatrix();
-    struct queueMember *p = malloc(sizeof(struct queueMember));
-    p = findPath();
-
-    currentNode = nodes[0][0];
-    printf("\n**********HEADING BACK**********\n");
-    int i = 1;
-    while (i < p->counter) {
-        int changeX = p->path[i]->x - currentNode->x;
-        int changeY = p->path[i]->y - currentNode->y;
-        int step = 1;
-        if (changeX != 0 && changeY != 0) {
-            printf("\nERROR: changX and changY both != 0\n");
-        }
-        if (i + 1 < p->counter) {
-            while (changeX != 0 && changeY == 0 && p->path[i + 1]->x - p->path[i]->x == changeX) {
-                step++;
-                i++;
-                printf("Move in x direction for step %d\n", step);
-                if (i + 1 >= p->counter) {
-                    break;
-                }
-            }
-            while (changeY != 0 && changeX == 0 && p->path[i + 1]->y - p->path[i]->y == changeY) {
-                step++;
-                i++;
-                printf("Move in y direction for step %d\n", step);
-                if (i + 1 >= p->counter) {
-                    break;
-                }
-            }
-        }
-        if (changeX > 0) {
-            printf("Facing right\n");
-            turnToAbsolute(right);
-        } else if (changeX < 0) {
-            printf("Facing left\n");
-            turnToAbsolute(left);
-        } else if (changeY > 0) {
-            printf("Facing up\n");
-            turnToAbsolute(up);
-        } else if (changeY < 0) {
-            printf("Facing down\n");
-            turnToAbsolute(down);
-        }
-        printf("Moving forward for step: %d\n", step);
-        drive_goto(SQUARE_LENGTH * step, SQUARE_LENGTH * step);
-        currentNode = p->path[i];
-        printf("At node (%d,%d)\n", currentNode->x, currentNode->y);
-        i++;
-    }
+    dsRacing();
 
 }
