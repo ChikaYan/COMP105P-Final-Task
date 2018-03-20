@@ -10,7 +10,7 @@
 #include "simulator.h"
 
 const int SQUARE_LENGTH = 123; // in ticks (40cm?)
-const int LR_THRESHOLD = 39.5; // in LRdis()
+const int LR_THRESHOLD = 78  ; // in LRdis()
 const int FRONT_THRESHOLD = 30; // in cm
 
 
