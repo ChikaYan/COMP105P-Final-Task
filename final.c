@@ -76,10 +76,10 @@ struct node *currentNode = NULL;
 struct node *nodes[4][5];
 
 int matrix[4][5][4][5];
-struct queueMember *queue[100];
+struct queueMember *queue[1000];
 int qFront = 1, qRear = 0;
 int visited[4][5];
-struct queueMember *paths[20];
+struct queueMember *paths[50];
 int pathCounter = 0;
 
 int frontClear() {
@@ -726,49 +726,60 @@ int atOldJunction() {
     return 0;
 }
 
-void bfs(struct queueMember *current) {
-    int x = current->n->x, y = current->n->y;
-    qRear++; // now qRead is pointing towards the next node in path
+void bfs() { // TODO: check change to while loop, change to use loop queue?
+    while(qRear <qFront){
+        struct queueMember *current = queue[qRear];
+        int x = current->n->x, y = current->n->y;
+        qRear++; // now qRead is pointing towards the next node in path
 
-    if (x == 3 && y == 4) { // final destination reached
-        current->path[current->counter] = nodes[3][4];
-        current->counter++;
-        paths[pathCounter] = current;
-        pathCounter++;
-        if (qRear >= qFront) { // queue empty -- qFront always points to the first empty space after qRear
-            return;
-        }
-        bfs(queue[qRear]);
-    }
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 5; j++) {
-            if (matrix[x][y][i][j]) { // current node connects to node (i,j)
-                // check if target node is visited already
-                int nodeVisited = 0;
-                for (int k = 0; k < current->counter; k++) {
-                    if (current->path[k] == nodes[i][j]) {
-                        //printf("Found a visited node\n");
-                        nodeVisited = 1;
-                        break;
+        if (x == 3 && y == 4) { // final destination reached
+            current->path[current->counter] = nodes[3][4];
+            current->counter++;
+            paths[pathCounter] = current;
+            pathCounter++;
+            if (pathCounter >= 50){
+                printf("WARNING: paths array is full, quitting bfs\n");
+                return;
+            }
+        }else{
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 5; j++) {
+                    if (matrix[x][y][i][j]) { // current node connects to node (i,j)
+                        // check if target node is visited already
+                        int nodeVisited = 0;
+                        for (int k = 0; k < current->counter; k++) {
+                            if (current->path[k] == nodes[i][j]) {
+                                //printf("Found a visited node\n");
+                                nodeVisited = 1;
+                                break;
+                            }
+                        }
+                        if (nodeVisited) {
+                            continue;
+                        }
+                        queue[qFront]->n = nodes[i][j];
+                        for (int k = 0; k < current->counter; k++) {
+                            queue[qFront]->path[k] = current->path[k]; // inherit the path from its precedence
+                        }
+                        queue[qFront]->path[current->counter] = nodes[x][y];
+                        queue[qFront]->counter = current->counter + 1;
+                        qFront++; // qFront now points to next avaliable index
+                        if (qFront >= 1000){
+                            printf("WARNING: queue is full, quiting bfs\n");
+                            return;
+                        }
                     }
                 }
-                if (nodeVisited) {
-                    continue;
-                }
-                queue[qFront]->n = nodes[i][j];
-                for (int k = 0; k < current->counter; k++) {
-                    queue[qFront]->path[k] = current->path[k]; // inherit the path from its precedence
-                }
-                queue[qFront]->path[current->counter] = nodes[x][y];
-                queue[qFront]->counter = current->counter + 1;
-                qFront++; // qFront now points to next avaliable index
             }
         }
+
+//        if (qRear >= qFront) { // queue empty -- qFront always points to the first empty space after qRear
+//            return;
+//        }
     }
-    if (qRear >= qFront) { // queue empty
-        return;
-    }
-    bfs(queue[qRear]);
+
+
+    //bfs(queue[qRear]);
 }
 
 struct queueMember *findBestPath() { // unchecked
@@ -851,7 +862,7 @@ struct queueMember *findBestPath() { // unchecked
 
 struct queueMember *findPath() {// unchecked
     // initialise the queue
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
         queue[i] = malloc(sizeof(struct queueMember));
         queue[i]->counter = 0;
         queue[i]->n = malloc(sizeof(struct node));
@@ -862,12 +873,12 @@ struct queueMember *findPath() {// unchecked
     }
 
     // initialise paths
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 50; i++) {
         paths[i] = malloc(sizeof(struct queueMember));
     }
 
     queue[0]->n = nodes[0][0];
-    bfs(queue[qRear]);
+    bfs();
 
     return findBestPath();
 }
