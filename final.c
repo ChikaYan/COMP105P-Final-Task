@@ -1,3 +1,5 @@
+// TODO: read your own code and make sure everything works as expected!
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -55,7 +57,6 @@ struct node {
     enum label rightTag;
     enum label leftTag;
     enum label downTag;
-    //enum label tag;
 };
 
 struct queueMember {
@@ -88,7 +89,7 @@ int frontClear() {
         return 1;
     }
 //    int botReposition = (18 - fd);
-//    if (botReposition > 0 || botReposition < 0) { // TODO: need to be enabled?
+//    if (botReposition > 0 || botReposition < 0) { // TODO: needed?
 //        botReposition /= 0.325;
 //        drive_goto(-botReposition, -botReposition);
 //    }
@@ -125,11 +126,11 @@ void turnRight() {
 //    }
     if (turnLog > 0 && turnLog % 2 == 1) { // right turn number is larger than 0 and is odd -- need to overturn
         drive_goto(26, -26);
-        printf("Right overturning\n");
+        printf("\nRight overturning\n");
     } else if (turnLog < 0 &&
                turnLog % 2 == 0) { // left turn number is larger than 0 and is even -- need to reset overturn
         drive_goto(26, -26);
-        printf("Right overturning\n");
+        printf("\nRight overturning\n");
     } else {
         drive_goto(25, -26);
     }
@@ -164,10 +165,10 @@ void turnLeft() {
 //    }
     if (turnLog < 0 && turnLog % 2 == -1) { // left turn number is larger than 0 and is odd -- need to overturn
         drive_goto(-26, 26);
-        printf("Left overturning\n");
+        printf("\nLeft overturning\n");
     } else if (turnLog > 0 && turnLog % 2 == 0) { // has turned more than one right turns -- need to reset overturn
         drive_goto(-26, 26);
-        printf("Left overturning\n");
+        printf("\nLeft overturning\n");
     } else {
         drive_goto(-25, 26);
     }
@@ -192,6 +193,7 @@ void turnLeft() {
 }
 
 void turnAround() { // shouldn't be used
+    printf("WARNING: Turn Around function is used\n");
     if (turnLog > 0) {
         turnLeft();
         turnLeft();
@@ -252,7 +254,7 @@ void moveBackward() {
     addEdge(findAdjacent(front), currentNode);
 }
 
-void dsTurnRightAfterInit() {
+void dsTurnRightAfterInit() { // tested: after init
     drive_ramp(128, 64);
     pause(710);
     drive_ramp(128, 128);
@@ -266,7 +268,7 @@ void dsTurnRight() { // tested: after forwarding, after turning left
     pause(170);
 }
 
-void dsTurnRightAfterRightTurn() {
+void dsTurnRightAfterRightTurn() { // tested: after right turn
     drive_ramp(128, 128);
     pause(100);
     drive_ramp(128, 64);
@@ -282,7 +284,7 @@ void dsTurnLeft() { // tested: after forwarding, after turning right, after turn
     pause(170);
 }
 
-void dsTurnLeftAfterLeftTurn() {
+void dsTurnLeftAfterLeftTurn() { // tested: after left turn
     drive_ramp(128, 128);
     pause(100);
     drive_ramp(64, 128);
@@ -302,17 +304,17 @@ void dsMoveForwardAfterForwarding() { // tested: after moveForward
     pause(940);
 }
 
-void dsMoveForwardAfter90Turn() {
+void dsMoveForwardAfter90Turn() { // tested: after left turn and right turn
     drive_ramp(128, 128);
     pause(900);
 }
 
-void dsMoveForwardAfter180Turn() {
+void dsMoveForwardAfter180Turn() { // tested: after 180 turns
     drive_ramp(128, 128);
     pause(1025);
 }
 
-void dsInitMove() {
+void dsInitMove() { // tested: init
     drive_ramp(128, 128);
     pause(1150);
 }
@@ -342,7 +344,7 @@ void moveAlongPath() {
         } else if (rightClear()) {
             turnLeft();
             moveBackward();
-        } else {
+        } else { // marching backwards -- can't be dead end
             moveBackward();
         }
     }
@@ -407,7 +409,7 @@ void printMatrix() {
     }
 }
 
-struct node *findAdjacent(enum relativeDir targetDirection) {
+struct node *findAdjacent(enum relativeDir targetDirection) { // unchecked
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -456,7 +458,7 @@ struct node *findAdjacent(enum relativeDir targetDirection) {
     }
 }
 
-int hasAdjacent(enum relativeDir targetDirection) {
+int hasAdjacent(enum relativeDir targetDirection) {// unchecked
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -505,7 +507,7 @@ int hasAdjacent(enum relativeDir targetDirection) {
     }
 }
 
-enum label findAdjacentTag(enum relativeDir targetDirection) {
+enum label findAdjacentTag(enum relativeDir targetDirection) {// unchecked
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -554,7 +556,7 @@ enum label findAdjacentTag(enum relativeDir targetDirection) {
     }
 }
 
-void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {
+void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {// unchecked
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -671,23 +673,25 @@ void printTags() {
     }
 }
 
-void faceExitWithBack() {
+void faceExitWithBack() { // unchecked: change clear() to hasAdjacent -- is hasAdjacent even needed?
     printTags();
-    if (leftClear() && findAdjacentTag(rLeft) == X) {
+    if (hasAdjacent(rLeft) && findAdjacentTag(rLeft) == X) {
         turnRight();
         return;
     }
-    if (rightClear() && findAdjacentTag(rRight) == X) {
+    if (hasAdjacent(rRight) && findAdjacentTag(rRight) == X) {
         turnLeft();
         return;
     }
-    if (frontClear() && findAdjacentTag(front) == X) {
+    if (hasAdjacent(front) && findAdjacentTag(front) == X) { // shouldn't be used
         turnAround();
-        printf("faceExitWithBack function does something usual\n");
+        printf("WARNING: faceExitWithBack function turns the bot around\n");
     }
+
+    // otherwise the exit is just at back -- no need to do anything
 }
 
-void goToEmpty() { // bot should move forward into empty node
+void goToEmpty() { // bot should always move forward into empty node
     if (leftClear() && findAdjacentTag(rLeft) == Empty) {
         turnLeft();
         updateAdjacentTag(front, N);
@@ -706,7 +710,7 @@ void goToEmpty() { // bot should move forward into empty node
     }
 }
 
-int hasEmptyAdjNode() { // will only be used when marching back
+int hasEmptyAdjNode() { // will only be used when marching back into a junction
     if ((leftClear() && findAdjacentTag(rLeft) == Empty) || (frontClear() && findAdjacentTag(front) == Empty) ||
         (rightClear() && findAdjacentTag(rRight) == Empty)) {
         return 1;
@@ -724,15 +728,14 @@ int atOldJunction() {
 
 void bfs(struct queueMember *current) {
     int x = current->n->x, y = current->n->y;
-//    visited[x][y] = 1;
-    qRear++;
+    qRear++; // now qRead is pointing towards the next node in path
 
     if (x == 3 && y == 4) { // final destination reached
         current->path[current->counter] = nodes[3][4];
         current->counter++;
-        paths[pathCounter] = current; //TODO: find out if init is needed
+        paths[pathCounter] = current;
         pathCounter++;
-        if (qRear >= qFront) { // queue empty
+        if (qRear >= qFront) { // queue empty -- qFront always points to the first empty space after qRear
             return;
         }
         bfs(queue[qRear]);
@@ -744,6 +747,7 @@ void bfs(struct queueMember *current) {
                 int nodeVisited = 0;
                 for (int k = 0; k < current->counter; k++) {
                     if (current->path[k] == nodes[i][j]) {
+                        //printf("Found a visited node\n");
                         nodeVisited = 1;
                         break;
                     }
@@ -753,11 +757,11 @@ void bfs(struct queueMember *current) {
                 }
                 queue[qFront]->n = nodes[i][j];
                 for (int k = 0; k < current->counter; k++) {
-                    queue[qFront]->path[k] = current->path[k];
+                    queue[qFront]->path[k] = current->path[k]; // inherit the path from its precedence
                 }
                 queue[qFront]->path[current->counter] = nodes[x][y];
                 queue[qFront]->counter = current->counter + 1;
-                qFront++;
+                qFront++; // qFront now points to next avaliable index
             }
         }
     }
@@ -767,7 +771,7 @@ void bfs(struct queueMember *current) {
     bfs(queue[qRear]);
 }
 
-struct queueMember *findBestPath() {
+struct queueMember *findBestPath() { // unchecked
     int bestPathIndex = 0;
     float bestTime = 99999;
     for (int i = 0; i < pathCounter; i++) {
@@ -845,7 +849,8 @@ struct queueMember *findBestPath() {
     return paths[bestPathIndex];
 }
 
-struct queueMember *findPath() {
+struct queueMember *findPath() {// unchecked
+    // initialise the queue
     for (int i = 0; i < 100; i++) {
         queue[i] = malloc(sizeof(struct queueMember));
         queue[i]->counter = 0;
@@ -856,13 +861,18 @@ struct queueMember *findPath() {
         }
     }
 
+    // initialise paths
+    for (int i = 0; i < 20; i++) {
+        paths[i] = malloc(sizeof(struct queueMember));
+    }
+
     queue[0]->n = nodes[0][0];
     bfs(queue[qRear]);
 
     return findBestPath();
 }
 
-void turnToAbsolute(enum absoluteDir dir) {
+void turnToAbsolute(enum absoluteDir dir) {// unchecked
     switch (dir) {
         case up:
             switch (currentDir) {
@@ -921,7 +931,7 @@ void turnToAbsolute(enum absoluteDir dir) {
     }
 }
 
-void dgRacing() {
+void dgRacing() {// unchecked
     struct queueMember *p = malloc(sizeof(struct queueMember));
     p = findPath();
     currentNode = nodes[0][0];
@@ -973,7 +983,7 @@ void dgRacing() {
     }
 }
 
-void dsRacing() {
+void dsRacing() {// unchecked
     drive_setRampStep(2000);
     struct queueMember *p = malloc(sizeof(struct queueMember));
     p = findPath();
@@ -1106,7 +1116,7 @@ void dsRacing() {
     }
 }
 
-int main() { // Trémaux's Algorithm
+int main() { // Trémaux's Algorithm // unchecked
     initialiseNode();
     simulator_startNewSmokeTrail();
     //TODO: find out if malloc is needed
