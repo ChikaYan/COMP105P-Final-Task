@@ -115,15 +115,6 @@ int rightClear() {
 }
 
 void turnRight() {
-//    if (turnLog > 0) {
-//        // turn left first then turn around
-//        drive_goto(-25, 26);
-//        drive_goto(51, -52);
-//        turnLog -= 1;
-//    } else {
-//        drive_goto(26, -25);
-//        turnLog += 1;
-//    }
     if (turnLog > 0 && turnLog % 2 == 1) { // right turn number is larger than 0 and is odd -- need to overturn
         drive_goto(26, -26);
         printf("\nRight overturning\n");
@@ -155,14 +146,6 @@ void turnRight() {
 }
 
 void turnLeft() {
-//    if (turnLog < 0) {
-//        drive_goto(26, -25);
-//        drive_goto(51, -52);
-//        turnLog += 1;
-//    } else {
-//        drive_goto(-25, 26);
-//        turnLog -= 1;
-//    }
     if (turnLog < 0 && turnLog % 2 == -1) { // left turn number is larger than 0 and is odd -- need to overturn
         drive_goto(-26, 26);
         printf("\nLeft overturning\n");
