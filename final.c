@@ -727,7 +727,7 @@ int atOldJunction() {
 }
 
 void bfs() { // TODO: check change to while loop, change to use loop queue?
-    while(qRear <qFront){
+    while (qRear < qFront) {
         struct queueMember *current = queue[qRear];
         int x = current->n->x, y = current->n->y;
         qRear++; // now qRead is pointing towards the next node in path
@@ -737,11 +737,12 @@ void bfs() { // TODO: check change to while loop, change to use loop queue?
             current->counter++;
             paths[pathCounter] = current;
             pathCounter++;
-            if (pathCounter >= 50){
+            // the queueMember that reaches the final destination is needed in paths -- don't free it
+            if (pathCounter >= 50) {
                 printf("WARNING: paths array is full, quitting bfs\n");
                 return;
             }
-        }else{
+        } else {
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 5; j++) {
                     if (matrix[x][y][i][j]) { // current node connects to node (i,j)
@@ -757,14 +758,26 @@ void bfs() { // TODO: check change to while loop, change to use loop queue?
                         if (nodeVisited) {
                             continue;
                         }
+                        // dynamic queue init
+                        queue[qFront] = malloc(sizeof(struct queueMember));
+//                        queue[qFront]->n = malloc(sizeof(struct node));
+//                        for (int k = 0; k < 30; k++) {
+//                            queue[qFront]->path[k] = malloc(sizeof(struct node));
+//                            queue[qFront]->path[k] = NULL;
+//                        }
+
                         queue[qFront]->n = nodes[i][j];
                         for (int k = 0; k < current->counter; k++) {
                             queue[qFront]->path[k] = current->path[k]; // inherit the path from its precedence
                         }
                         queue[qFront]->path[current->counter] = nodes[x][y];
                         queue[qFront]->counter = current->counter + 1;
+
+                        // free the last queue member -- can't use?
+                        //free(queue[qRear - 1]);
+
                         qFront++; // qFront now points to next avaliable index
-                        if (qFront >= 1000){
+                        if (qFront >= 1000) {
                             printf("WARNING: queue is full, quiting bfs\n");
                             return;
                         }
@@ -777,8 +790,6 @@ void bfs() { // TODO: check change to while loop, change to use loop queue?
 //            return;
 //        }
     }
-
-
     //bfs(queue[qRear]);
 }
 
@@ -862,21 +873,34 @@ struct queueMember *findBestPath() { // unchecked
 
 struct queueMember *findPath() {// unchecked
     // initialise the queue
-    for (int i = 0; i < 1000; i++) {
-        queue[i] = malloc(sizeof(struct queueMember));
-        queue[i]->counter = 0;
-        queue[i]->n = malloc(sizeof(struct node));
-        for (int j = 0; j < 30; j++) {
-            queue[i]->path[j] = malloc(sizeof(struct node));
-            queue[i]->path[j] = NULL;
-        }
-    }
+//    for (int i = 0; i < 1000; i++) {
+//        queue[i] = malloc(sizeof(struct queueMember));
+//        queue[i]->counter = 0;
+//        queue[i]->n = malloc(sizeof(struct node));
+//        for (int j = 0; j < 30; j++) {
+//            queue[i]->path[j] = malloc(sizeof(struct node));
+//            queue[i]->path[j] = NULL;
+//        }
+//    }
 
-    // initialise paths
-    for (int i = 0; i < 50; i++) {
-        paths[i] = malloc(sizeof(struct queueMember));
-    }
+    // initialise paths -- not needed
+//    for (int i = 0; i < 50; i++) {
+//        paths[i] = malloc(sizeof(struct queueMember));
+//        paths[i]->counter = 0;
+//        paths[i]->n = malloc(sizeof(struct node));
+//        for (int j = 0; j < 30; j++) {
+//            paths[i]->path[j] = malloc(sizeof(struct node));
+//            paths[i]->path[j] = NULL;
+//        }
+//    }
 
+    queue[0] = malloc(sizeof(struct queueMember));
+    queue[0]->counter = 0;
+//    queue[0]->n = malloc(sizeof(struct node));
+//    for (int j = 0; j < 30; j++) {
+//        queue[0]->path[j] = malloc(sizeof(struct node));
+//        queue[0]->path[j] = NULL;
+//    }
     queue[0]->n = nodes[0][0];
     bfs();
 
@@ -943,8 +967,7 @@ void turnToAbsolute(enum absoluteDir dir) {// unchecked
 }
 
 void dgRacing() {// unchecked
-    struct queueMember *p = malloc(sizeof(struct queueMember));
-    p = findPath();
+    struct queueMember *p = findPath();
     currentNode = nodes[0][0];
     printf("\n**********DRIVE_GOTO HEADING BACK**********\n");
     int i = 1;
@@ -996,8 +1019,7 @@ void dgRacing() {// unchecked
 
 void dsRacing() {// unchecked
     drive_setRampStep(2000);
-    struct queueMember *p = malloc(sizeof(struct queueMember));
-    p = findPath();
+    struct queueMember *p = findPath();
     currentNode = nodes[0][0];
     drive_goto(-30, -30);
     printf("\n**********DRIVE_SPEED HEADING BACK**********\n");
@@ -1010,7 +1032,8 @@ void dsRacing() {// unchecked
             moveForward();
             return;
         }
-        printf("At node (%d,%d)\nFollowing nodes are: (%d,%d)(%d,%d)\n", currentNode->x, currentNode->y, p->path[i]->x,
+        printf("At node (%d,%d)\nFollowing nodes are: (%d,%d)(%d,%d)\n", currentNode->x, currentNode->y,
+               p->path[i]->x,
                p->path[i]->y, p->path[i + 1]->x, p->path[i + 1]->y);
 //        printf("current i is: %d, counter is: %d\n", i, p->counter);
         if (hasAdjacent(front) &&
@@ -1130,8 +1153,8 @@ void dsRacing() {// unchecked
 int main() { // Trémaux's Algorithm // unchecked
     initialiseNode();
     simulator_startNewSmokeTrail();
-    //TODO: find out if malloc is needed
-    currentNode = malloc(sizeof(struct node));
+    //TODO: find out if malloc is needed -- seems to be unnecessary
+//    currentNode = malloc(sizeof(struct node));
     currentNode = nodes[0][0];
     drive_goto(30, 30); // initialize to first middle point
     while (1) {
@@ -1139,7 +1162,8 @@ int main() { // Trémaux's Algorithm // unchecked
             printf("Traversed the maze\n");
             break;
         }
-        if ((marchingState == forward && !atJunction()) || (marchingState == backward && currentNode->junction == 0)) {
+        if ((marchingState == forward && !atJunction()) ||
+            (marchingState == backward && currentNode->junction == 0)) {
             printf("At node (%d,%d).\n", currentNode->x, currentNode->y);
             if (leftClear() + rightClear() + frontClear() > 0) { // not dead end
                 moveAlongPath();
