@@ -1002,7 +1002,10 @@ void dsRacing() {// unchecked
     struct queueMember *p = findPath();
     currentNode = nodes[0][0];
     drive_goto(-30, -30);
-    //TODO: find out if pause is needed
+
+    printf("\n**********PAUSING**********\n");
+    pause(1000);
+
     printf("\n**********DRIVE_SPEED HEADING BACK**********\n");
     enum moveType lastMove = init;
     dsInitMove(); // first move is always going up
