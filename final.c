@@ -392,7 +392,7 @@ void printMatrix() {
     }
 }
 
-struct node *findAdjacent(enum relativeDir targetDirection) { // unchecked
+struct node *findAdjacent(enum relativeDir targetDirection) {
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -490,7 +490,7 @@ int hasAdjacent(enum relativeDir targetDirection) {// unchecked
     }
 }
 
-enum label findAdjacentTag(enum relativeDir targetDirection) {// unchecked
+enum label findAdjacentTag(enum relativeDir targetDirection) {
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -539,7 +539,7 @@ enum label findAdjacentTag(enum relativeDir targetDirection) {// unchecked
     }
 }
 
-void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {// unchecked
+void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {
     switch (targetDirection) {
         case front:
             switch (currentDir) {
@@ -605,7 +605,7 @@ void updateAdjacentTag(enum relativeDir targetDirection, enum label newTag) {// 
 }
 
 void printTags() {
-    printf("Node (%d,%d)\n", currentNode->x, currentNode->y);
+    printf("//////////TAGS OF NODE (%d,%d)\n//////////", currentNode->x, currentNode->y);
     printf("upTag: ");
     switch (currentNode->upTag) {
         case X:
@@ -654,6 +654,7 @@ void printTags() {
             printf("Empty\n");
             break;
     }
+    printf("/////////////////////\n");
 }
 
 void faceExitWithBack() { // unchecked: change clear() to hasAdjacent -- is hasAdjacent even needed?
@@ -709,7 +710,7 @@ int atOldJunction() {
     return 0;
 }
 
-void bfs() { // TODO: check change to while loop, change to use loop queue?
+void bfs() { // TODO: change to use loop queue?
     while (qRear < qFront) {
         struct queueMember *current = queue[qRear];
         int x = current->n->x, y = current->n->y;
@@ -776,7 +777,7 @@ void bfs() { // TODO: check change to while loop, change to use loop queue?
     //bfs(queue[qRear]);
 }
 
-struct queueMember *findBestPath() { // unchecked
+struct queueMember *findBestPath() {
     int bestPathIndex = 0;
     float bestTime = 99999;
     for (int i = 0; i < pathCounter; i++) {
@@ -789,25 +790,21 @@ struct queueMember *findBestPath() { // unchecked
             int changeX = p->path[j]->x - simulateNode->x;
             int changeY = p->path[j]->y - simulateNode->y;
             int step = 1;
+
             if (changeX != 0 && changeY != 0) {
-                printf("\nERROR: changX and changY both != 0\nchangeX: %d\nchangeY: %d\n", changeX, changeY);
+                printf("\nWARNING: changX and changY both != 0\nchangeX: %d\nchangeY: %d\n", changeX, changeY);
             }
-            if (j + 1 < p->counter) {
-                while (changeX != 0 && changeY == 0 && p->path[j + 1]->x - p->path[j]->x == changeX) {
-                    step++;
-                    j++;
-                    if (j + 1 >= p->counter) {
-                        break;
-                    }
-                }
-                while (changeY != 0 && changeX == 0 && p->path[j + 1]->y - p->path[j]->y == changeY) {
-                    step++;
-                    j++;
-                    if (j + 1 >= p->counter) {
-                        break;
-                    }
-                }
+            // unchecked: move j + 1 < p->counter into loop condition
+            while (changeX != 0 && changeY == 0 && j + 1 < p->counter && p->path[j + 1]->x - p->path[j]->x == changeX) {
+                step++;
+                j++;
             }
+            while (changeY != 0 && changeX == 0 && j + 1 < p->counter && p->path[j + 1]->y - p->path[j]->y == changeY) {
+                step++;
+                j++;
+            }
+            // j now points to the current node after moving
+
             if (changeX > 0) {
                 if (currentDir != right) {
                     time += 3.264;
@@ -839,7 +836,7 @@ struct queueMember *findBestPath() { // unchecked
                     time += 11.312;
             }
             simulateNode = p->path[j];
-            j++;
+            j++; //j now points to next target node
         }
         printf("\nPath %d is:", i);
         for (int k = 0; k < p->counter; k++) {
@@ -854,7 +851,7 @@ struct queueMember *findBestPath() { // unchecked
     return paths[bestPathIndex];
 }
 
-struct queueMember *findPath() {// unchecked
+struct queueMember *findPath() {
     // initialise the queue
 //    for (int i = 0; i < 1000; i++) {
 //        queue[i] = malloc(sizeof(struct queueMember));
