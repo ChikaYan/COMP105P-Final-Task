@@ -12,7 +12,7 @@
 #include "simulator.h"
 
 const int SQUARE_LENGTH = 123; // in ticks (40cm?)
-const int LR_THRESHOLD = 79; // in LRdis()
+const int LR_THRESHOLD = 80; // in LRdis() -- its the maximum value, is it really good?
 const int FRONT_THRESHOLD = 30; // in cm
 
 
@@ -842,7 +842,7 @@ struct queueMember *findBestPath() { // unchecked
                     time += 3.264;
                 }
             }
-            switch (step) {
+            switch (step) { //TODO: update the numbers?
                 case 1:
                     time += 7.622;
                     break;
