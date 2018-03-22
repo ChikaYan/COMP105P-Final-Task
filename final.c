@@ -887,7 +887,7 @@ struct queueMember *findPath() {
     return findBestPath();
 }
 
-void turnToAbsolute(enum absoluteDir dir) {// unchecked
+void turnToAbsolute(enum absoluteDir dir) {// unchecked -- not used in ds
     switch (dir) {
         case up:
             switch (currentDir) {
@@ -1002,12 +1002,13 @@ void dsRacing() {// unchecked
     struct queueMember *p = findPath();
     currentNode = nodes[0][0];
     drive_goto(-30, -30);
+    //TODO: find out if pause is needed
     printf("\n**********DRIVE_SPEED HEADING BACK**********\n");
     enum moveType lastMove = init;
     dsInitMove(); // first move is always going up
-    int i = 1;
+    int i = 1; // i points to next node in path
     while (i < p->counter) {
-        if (i >= p->counter - 1) { //reached the end
+        if (i >= p->counter - 1) { //reached the end -- i is the last node in path and must be (3,4)
             printf("Reaching the end\n");
             moveForward();
             return;
@@ -1018,13 +1019,16 @@ void dsRacing() {// unchecked
 //        printf("current i is: %d, counter is: %d\n", i, p->counter);
         if (hasAdjacent(front) &&
             findAdjacent(front) != p->path[i]) { // next node is not in the front -- something went wrong
-            printf("dsRacing ERROR\n");
+            printf("ERROR: next node in path is not in the front (dsRacing)\n");
         }
-        currentNode = p->path[i];
-        i++;
+        currentNode = p->path[i]; // after this loop, current pos of bot will be path[i]
+        i++; // i now points to the node after next node
+
 //        printf("Printing path[i]\n");
 //        printf("path[i] is (%d,%d)\n", p->path[i]->x, p->path[i]->y);
 
+        // check the relative pos of next node and node after to determine move type
+        // right now currentNode actually is next node
         if (hasAdjacent(front) && findAdjacent(front) == p->path[i]) { // move front
             switch (lastMove) {
                 case init:
@@ -1112,7 +1116,7 @@ void dsRacing() {// unchecked
                     lastMove = rightTurn;
                     printf("dsTurnRight\n");
             }
-            switch (currentDir) { // change current dirction
+            switch (currentDir) {
                 case up:
                     currentDir = right;
                     break;
