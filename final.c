@@ -807,33 +807,33 @@ struct queueMember *findBestPath() {
 
             if (changeX > 0) {
                 if (currentDir != right) {
-                    time += 3.264;
+                    time += 0.9;
                 }
             } else if (changeX < 0) {
                 if (currentDir != left) {
-                    time += 3.264;
+                    time += 0.9;
                 }
             } else if (changeY > 0) {
                 if (currentDir != up) {
-                    time += 3.264;
+                    time += 0.9;
                 }
             } else if (changeY < 0) {
                 if (currentDir != down) {
-                    time += 3.264;
+                    time += 0.9;
                 }
             }
             switch (step) { //TODO: update the numbers?
                 case 1:
-                    time += 7.622;
+                    time += 1;//7.622;
                     break;
                 case 2:
-                    time += 7.674;
+                    time += 2;//7.674;
                     break;
                 case 3:
-                    time += 9.582;
+                    time += 3;//9.582;
                     break;
                 case 4:
-                    time += 11.312;
+                    time += 4;//11.312;
             }
             simulateNode = p->path[j];
             j++; //j now points to next target node
